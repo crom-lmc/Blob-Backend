@@ -1,0 +1,272 @@
+[
+  {
+    "title": "ArrayList 扩容机制源码解析",
+    "slug": "arraylist-grow-source",
+    "categorySlug": "java-basic",
+    "tags": ["Java", "集合框架", "源码阅读"],
+    "publishedAt": "2024-10-05T09:30:00",
+    "summary": "从 JDK 源码看 ArrayList 的 elementData 扩容策略与 grow() 实现细节。",
+    "contentMd": "# ArrayList 扩容机制源码解析\n\n## 为什么关心扩容\nArrayList 底层是 Object[] elementData，数组长度固定，容量不足时必须扩容，而扩容涉及 Arrays.copyOf 全量拷贝，是典型的性能敏感点。\n\n## 核心结论\n- 无参构造首次 add 时才初始化，默认容量 10\n- 扩容为原容量的 1.5 倍（oldCapacity + (oldCapacity >> 1)）\n- 若扩容后仍不够，直接取所需最小容量\n- 最大容量为 Integer.MAX_VALUE - 8\n\n## 关键源码\n```java\nprivate Object[] grow(int minCapacity) {\n    int oldCapacity = elementData.length;\n    if (oldCapacity > 0 || elementData != DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {\n        int newCapacity = ArraysSupport.newLength(oldCapacity,\n                minCapacity - oldCapacity, oldCapacity >> 1);\n        return elementData = Arrays.copyOf(elementData, newCapacity);\n    }\n    return elementData = new Object[Math.max(DEFAULT_CAPACITY, minCapacity)];\n}\n```\n\n## 实践建议\n能预估数据量时，直接用 new ArrayList<>(expectedSize) 一次性到位，避免多次拷贝。"
+  },
+  {
+    "title": "HashMap 哈希冲突与红黑树转换",
+    "slug": "hashmap-conflict-tree",
+    "categorySlug": "java-basic",
+    "tags": ["Java", "集合框架", "源码阅读"],
+    "publishedAt": "2024-10-29T10:10:00",
+    "summary": "HashMap 如何处理哈希冲突，链表何时树化又何时退化。",
+    "contentMd": "# HashMap 哈希冲突与红黑树转换\n\n## 冲突是怎么解决的\nHashMap 采用数组 + 链表 + 红黑树。hash(key) 先做扰动：\n\n```java\nstatic final int hash(Object key) {\n    int h;\n    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);\n}\n```\n高 16 位与低 16 位异或，让高位信息参与索引计算，减少低位规律带来的碰撞。\n\n## 树化与退化阈值\n| 条件 | 值 |\n| --- | --- |\n| 树化：链表长度 >= | 8 |\n| 树化前提：数组容量 >= | 64 |\n| 退化：树节点 <= | 6 |\n\n注意链表长度达到 8 但容量不足 64 时，会优先 resize 而不是树化。\n\n## 为什么要树化\n链表查找是 O(n)，红黑树是 O(log n)。在哈希碰撞攻击场景下，JDK 8 之后的改动把最坏情况收敛到 O(log n)。\n\n## 实践建议\n自定义 key 必须同时重写 hashCode 与 equals，且尽量让哈希分布均匀；HashMap 非线程安全，多线程请用 ConcurrentHashMap。"
+  },
+  {
+    "title": "ConcurrentHashMap 为什么线程安全",
+    "slug": "concurrenthashmap-thread-safe",
+    "categorySlug": "concurrency",
+    "tags": ["Java", "并发编程", "集合框架"],
+    "publishedAt": "2024-11-22T14:20:00",
+    "summary": "对比 JDK 7 的分段锁与 JDK 8 的 CAS + synchronized，理解 CHM 的并发设计。",
+    "contentMd": "# ConcurrentHashMap 为什么线程安全\n\n## 演进\n- JDK 7：Segment 分段锁，每段继承 ReentrantLock，锁粒度是段\n- JDK 8：废弃 Segment，改为数组桶级别同步，锁粒度更细\n\n## put 的核心流程\n1. 桶为空：CAS 写入，无锁\n2. 桶非空：synchronized 锁住桶的头节点，处理链表或红黑树\n3. 需要扩容：多线程协同迁移（ForwardingNode 标记已迁移）\n\n```java\nsynchronized (f) {              // f 为桶头节点\n    if (tabAt(tab, i) == f) {\n        // 链表尾插或树插入\n    }\n}\n```\n\n## 为什么不直接用 synchronized\nJDK 6 之后 synchronized 有偏向锁、轻量级锁、锁升级机制，在低竞争场景下与 CAS 成本接近，代码可维护性更好。\n\n## 注意\nCHM 的 size() 并非精确值，高并发下使用 mappingCount()；另外它保证单个操作的原子性，复合操作仍需额外加锁。"
+  },
+  {
+    "title": "反射与泛型擦除的那些坑",
+    "slug": "reflect-and-generic-erasure",
+    "categorySlug": "java-basic",
+    "tags": ["Java", "反射与泛型", "踩坑记录"],
+    "publishedAt": "2024-12-16T20:40:00",
+    "summary": "泛型擦除导致的类型丢失、桥接方法与反射取值异常复盘。",
+    "contentMd": "# 反射与泛型擦除的那些坑\n\n## 擦除是什么\nJava 泛型是编译期语法糖，字节码中 List<String> 与 List<Integer> 都是 List，泛型信息被替换为上界（默认 Object），运行时拿不到具体类型。\n\n```java\nList<String> a = new ArrayList<>();\nList<Integer> b = new ArrayList<>();\nSystem.out.println(a.getClass() == b.getClass());  // true\n```\n\n## 三个常见坑\n1. instanceof 不能带泛型：if (obj instanceof List<String>) 编译不过\n2. 数组不能创建泛型：new T[] 非法，用 (T[]) Array.newInstance(clazz, len)\n3. 方法重载擦除冲突：void f(List<String>) 与 void f(List<Integer>) 擦除后签名相同，编译报错\n\n## 如何拿到真实类型\n需要运行时类型时，用 TypeReference / 匿名子类保留签名信息：\n\n```java\nType type = new TypeReference<Map<String, User>>(){}.getType();\n```\nJackson、MyBatis 的泛型返回值解析都依赖这个技巧。\n\n## 实践建议\n反射尽量缓存 Method / Field 对象；能用接口或 Function 就不要用反射。"
+  },
+  {
+    "title": "JVM 内存区域与常见 OOM 场景",
+    "slug": "jvm-memory-and-oom",
+    "categorySlug": "jvm",
+    "tags": ["JVM", "性能优化"],
+    "publishedAt": "2025-01-09T11:00:00",
+    "summary": "梳理堆、元空间、直接内存与栈的溢出原因和排查路径。",
+    "contentMd": "# JVM 内存区域与常见 OOM 场景\n\n## 运行时数据区\n- 堆：对象实例，GC 主战场，-Xms/-Xmx\n- 元空间（Metaspace）：类元信息，JDK 8 后取代永久代，-XX:MaxMetaspaceSize\n- 虚拟机栈 / 本地方法栈：栈帧，-Xss，过深递归抛 StackOverflowError\n- 直接内存：NIO 堆外，-XX:MaxDirectMemorySize\n\n## 四种典型 OOM\n| 异常信息 | 常见原因 |\n| --- | --- |\n| Java heap space | 内存泄漏或堆设置过小 |\n| Metaspace | 动态生成类过多（CGLIB、反射代理） |\n| Direct buffer memory | Netty 池化未释放 |\n| unable to create native thread | 线程数超出系统限制 |\n\n## 排查三板斧\n1. -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/data/dump.hprof 现场留痕\n2. jstat -gcutil 观察各区使用率与 GC 次数\n3. MAT 打开 dump，看 Dominator Tree 定位大对象持有链\n\n## 实践建议\n线上务必配置堆转储参数；容器环境设置 -XX:MaxRAMPercentage=70，不要用硬编码堆大小。"
+  },
+  {
+    "title": "一次线上 Full GC 频繁排查实录",
+    "slug": "full-gc-troubleshooting",
+    "categorySlug": "jvm",
+    "tags": ["JVM", "性能优化", "踩坑记录"],
+    "publishedAt": "2025-02-02T21:15:00",
+    "summary": "从告警到定位：一次由大对象缓存引发的 Full GC 频繁问题处理过程。",
+    "contentMd": "# 一次线上 Full GC 频繁排查实录\n\n## 现象\n晚高峰接口 P99 从 80ms 涨到 2s，监控显示每分钟 Full GC 4~6 次，Old 区回收后仅下降 15%。\n\n## 排查过程\n1. jstat -gcutil <pid> 1000 确认 OU 长期在 90% 以上，FGCT 持续累加\n2. 容器未挂 heap dump 参数，用 jmap -dump:live,format=b,file=/tmp/a.hprof <pid> 临时抓一份\n3. MAT 打开，Dominator Tree 显示 ConcurrentHashMap$Node[] 占 1.8G\n\n## 根因\n业务方把全量字典表缓存到本地 Map，且 key 是每次请求的查询对象，导致：\n- 缓存永不失效，条目只增不减\n- 没有容量上限，Promotion 到 Old 区后回收不掉\n\n## 修复\n```java\nCache<String, Dict> cache = Caffeine.newBuilder()\n        .maximumSize(10_000)\n        .expireAfterWrite(Duration.ofMinutes(10))\n        .recordStats()\n        .build();\n```\n换成 Caffeine 并设置上限 + TTL，同时监控 cache.stats().hitRate()。\n\n## 复盘\n- 内存一定要有上限，本地缓存不是无底洞\n- 上线前必须配置 -XX:+HeapDumpOnOutOfMemoryError\n- 缓存命中率要作为核心指标纳入看板"
+  },
+  {
+    "title": "类加载机制与双亲委派模型",
+    "slug": "classloader-delegation",
+    "categorySlug": "jvm",
+    "tags": ["JVM", "源码阅读"],
+    "publishedAt": "2025-02-26T19:30:00",
+    "summary": "类的生命周期、双亲委派以及如何破坏它（SPI、热部署）。",
+    "contentMd": "# 类加载机制与双亲委派模型\n\n## 加载过程\n加载 -> 连接（验证、准备、解析）-> 初始化 -> 使用 -> 卸载。\n初始化触发时机：new、反射调用、访问静态字段、子类初始化、启动类 main。\n\n## 三层加载器\n- Bootstrap ClassLoader：rt.jar / java.base\n- Platform (Extension) ClassLoader\n- Application ClassLoader：classpath\n\n## 双亲委派\n```java\nprotected Class<?> loadClass(String name, boolean resolve) {\n    synchronized (getClassLoadingLock(name)) {\n        Class<?> c = findLoadedClass(name);\n        if (c == null) {\n            if (parent != null) c = parent.loadClass(name, false);\n            else c = findBootstrapClassOrNull(name);\n            if (c == null) c = findClass(name);\n        }\n        return c;\n    }\n}\n```\n先向上委派，父加载器无法完成才自己尝试。目的：保证类的唯一性与安全性，防止核心类被篡改。\n\n## 哪些地方打破了它\n1. JDBC / SPI：父加载器需要加载子加载器可见的实现类，用线程上下文类加载器 TCCL\n2. Tomcat：WebAppClassLoader 优先自己查找，实现类隔离\n3. OSGi、热部署：每个模块独立加载器\n\n## 实践建议\n自己写 ClassLoader 时先查 findLoadedClass，避免重复加载导致 instanceof 判断失败。"
+  },
+  {
+    "title": "volatile 的内存语义与可见性",
+    "slug": "volatile-visibility",
+    "categorySlug": "concurrency",
+    "tags": ["并发编程", "多线程", "源码阅读"],
+    "publishedAt": "2025-03-22T09:05:00",
+    "summary": "volatile 为什么能保证可见性、禁止重排序，以及它做不到什么。",
+    "contentMd": "# volatile 的内存语义与可见性\n\n## volatile 的两条保证\n1. 可见性：写操作立即刷新到主内存，读操作一定从主内存读\n2. 禁止指令重排序：通过内存屏障实现 happens-before\n\n底层对应于汇编的 lock 前缀指令，它既做了缓存一致性同步，也提供了内存屏障效果。\n\n## 典型用法：状态标记\n```java\nprivate volatile boolean running = true;\n\npublic void shutdown() { running = false; }\n\npublic void loop() {\n    while (running) { /* do work */ }\n}\n```\n少了 volatile，线程可能永远读不到新的 false。\n\n## 它做不到什么\nvolatile 不保证原子性，count++ 在并发下依然会丢。原因是自增是读-改-写三步复合操作。\n\n需要原子性时用：\n```java\nprivate final AtomicInteger count = new AtomicInteger();\ncount.incrementAndGet();\n```\n\n## 单例中的 volatile\n双重检查锁必须加 volatile，禁止 new Singleton() 的初始化与赋值重排序，否则其他线程可能拿到未构造完的对象。"
+  },
+  {
+    "title": "synchronized 与 ReentrantLock 如何选型",
+    "slug": "synchronized-vs-reentrantlock",
+    "categorySlug": "concurrency",
+    "tags": ["并发编程", "多线程", "性能优化"],
+    "publishedAt": "2025-04-15T15:45:00",
+    "summary": "从实现机制、性能与功能三个维度对比两把锁。",
+    "contentMd": "# synchronized 与 ReentrantLock 如何选型\n\n## 对比\n| 维度 | synchronized | ReentrantLock |\n| --- | --- | --- |\n| 实现 | JVM 内置 | JDK AQS |\n| 释放 | 自动 | 必须 finally unlock |\n| 可中断 | 不支持 | lockInterruptibly |\n| 公平性 | 非公平 | 可选公平 |\n| 尝试加锁 | 不支持 | tryLock(timeout) |\n| 条件队列 | 一个 | 多个 Condition |\n\n## 性能\nJDK 6 引入偏向锁、轻量级锁后，低竞争场景两者差距极小，甚至 synchronized 更优（JIT 有锁消除、锁粗化）。\n\n## 选型建议\n- 普通临界区：优先 synchronized，代码简洁、不会忘记释放\n- 需要超时、可中断、公平锁、多个条件队列：用 ReentrantLock\n- 读多写少：用 StampedLock 或 ReadWriteLock\n\n## 注意\n锁对象要 private final，锁 String、Integer 常量会导致意外共享；避免锁的范围里包含远程调用、文件 IO 等慢操作。"
+  },
+  {
+    "title": "线程池参数怎么配才不踩雷",
+    "slug": "threadpool-params-best-practice",
+    "categorySlug": "concurrency",
+    "tags": ["并发编程", "多线程", "踩坑记录"],
+    "publishedAt": "2025-05-09T10:25:00",
+    "summary": "线程池七大参数、任务队列选择以及拒绝策略的生产配置建议。",
+    "contentMd": "# 线程池参数怎么配才不踩雷\n\n## 七个参数\ncorePoolSize、maximumPoolSize、keepAliveTime、unit、workQueue、threadFactory、handler。\n执行顺序：核心线程 -> 队列 -> 最大线程 -> 拒绝策略。\n\n## 队列选择是坑点\nExecutors 提供的几种工厂方法都有隐患：\n- newFixedThreadPool：LinkedBlockingQueue 无界，堆积即 OOM\n- newCachedThreadPool：最大线程数无界\n- newSingleThreadExecutor：同样无界队列\n\n必须手写 ThreadPoolExecutor：\n\n```java\nThreadPoolExecutor pool = new ThreadPoolExecutor(\n        8, 16, 60, TimeUnit.SECONDS,\n        new ArrayBlockingQueue<>(2000),\n        new ThreadFactoryBuilder().setNameFormat(\"biz-pool-%d\").build(),\n        new ThreadPoolExecutor.CallerRunsPolicy());\n```\n\n## 参数估算\n- CPU 密集：core = CPU 核数 + 1\n- IO 密集：core = CPU 核数 x (1 + 等待时间/计算时间)\n\n## 拒绝策略\n生产推荐 CallerRunsPolicy（调用方线程执行，天然限流）或自定义策略落日志 + 上报监控；不要用 DiscardPolicy 静默丢任务。\n\n## 补充\n给线程池起名字、注册活跃度和队列长度的监控指标，出问题才查得动。"
+  },
+  {
+    "title": "ThreadLocal 内存泄漏之谜",
+    "slug": "threadlocal-memory-leak",
+    "categorySlug": "concurrency",
+    "tags": ["并发编程", "多线程", "性能优化"],
+    "publishedAt": "2025-06-02T16:00:00",
+    "summary": "ThreadLocalMap 的弱引用设计与 remove() 的正确姿势。",
+    "contentMd": "# ThreadLocal 内存泄漏之谜\n\n## 数据结构\n每个 Thread 持有 ThreadLocalMap，其中 Entry 的 key 是弱引用指向 ThreadLocal，value 是强引用。\n\n```java\nstatic class Entry extends WeakReference<ThreadLocal<?>> {\n    Object value;\n}\n```\n\n## 泄漏怎么发生的\nThreadLocal 对象被回收后，key 变成 null，但 value 仍被 Entry 强引用，且线程池线程长期存活 -> value 永远无法回收。\n注意：get / set / remove 会顺带清理 key 为 null 的 Entry，但这是被动触发，不清理就是持续泄漏。\n\n## 正确姿势\n```java\ntry {\n    userContext.set(userInfo);\n    chain.doFilter(request, response);\n} finally {\n    userContext.remove();   // 必须\n}\n```\n\n## 额外坑：线程池透传\nThreadLocal 不会跨线程传递，异步场景要用 TransmittableThreadLocal 或显式传参。\n\n## 实践建议\n- 定义成 private static final ThreadLocal<X>（避免每次 new）\n- 一律配 finally + remove()\n- Web 场景优先用 RequestContextHolder / traceId 方案"
+  },
+  {
+    "title": "CompletableFuture 异步编排实战",
+    "slug": "completablefuture-in-action",
+    "categorySlug": "concurrency",
+    "tags": ["并发编程", "Java", "性能优化"],
+    "publishedAt": "2025-06-26T13:40:00",
+    "summary": "串行、并行、聚合与异常处理，把多个异步任务编排成一件事。",
+    "contentMd": "# CompletableFuture 异步编排实战\n\n## 基础\n```java\nCompletableFuture<User> f = CompletableFuture.supplyAsync(() -> userService.get(id), pool);\n```\n\n## 四类编排\n- 串行：thenApply（有返回值）/ thenAccept（无返回值）\n- 并行聚合：thenCombine 合并两个结果\n- 任一完成：applyToEither，适合多源取快\n- 全部完成：CompletableFuture.allOf().join()\n\n```java\nCompletableFuture<User> user = supplyAsync(() -> userApi.get(uid), pool);\nCompletableFuture<List<Order>> orders = supplyAsync(() -> orderApi.list(uid), pool);\n\nreturn user.thenCombine(orders, (u, os) -> new ProfileVO(u, os))\n           .exceptionally(e -> ProfileVO.empty());\n```\n\n## 异常处理\n- exceptionally：兜底默认值\n- handle：无论成功失败都能拿到结果与异常\n- whenComplete：只观察不转换\n\n## 必须注意\n1. 一定要传自定义线程池，否则默认走 ForkJoinPool.commonPool，会被 IO 阻塞拖垮\n2. allOf 不会返回聚合结果，需要额外 join 各个 future\n3. 超时保护：orTimeout(2, TimeUnit.SECONDS)（JDK 9+）\n\n## 实践建议\n编排层数控制在 3 层以内，过度嵌套会让异常定位变得困难。"
+  },
+  {
+    "title": "Spring Boot 自动装配原理",
+    "slug": "springboot-autoconfigure",
+    "categorySlug": "spring",
+    "tags": ["Spring Boot", "源码阅读"],
+    "publishedAt": "2025-07-20T09:15:00",
+    "summary": "从 @SpringBootApplication 到 spring.factories，理解约定优于配置的落地方式。",
+    "contentMd": "# Spring Boot 自动装配原理\n\n## 入口注解\n@SpringBootApplication = @SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan。\n核心是 @EnableAutoConfiguration，它通过 @Import(AutoConfigurationImportSelector.class) 导入候选配置类。\n\n## 候选类从哪来\n旧版读取 META-INF/spring.factories；Spring Boot 3 改为主键 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports，更利于 GraalVM 原生镜像。\n\n## 生效条件\n装配类上大量使用条件注解，全部满足才会注册：\n- @ConditionalOnClass：classpath 有某个类\n- @ConditionalOnMissingBean：容器里没有同类型 Bean\n- @ConditionalOnProperty：配置开关打开\n\n```java\n@AutoConfiguration\n@ConditionalOnClass(DataSource.class)\n@ConditionalOnProperty(prefix = \"spring.datasource\", name = \"url\")\npublic class DataSourceAutoConfiguration { }\n```\n\n## 为什么自己的 starter 不生效\n90% 是这三类问题：starter 不在 classpath、AutoConfiguration.imports 文件名/路径错、被 @ConditionalOnMissingBean 顶掉。\n\n## 调试技巧\n启动加 --debug，控制台会打印 CONDITION EVALUATION REPORT，直接告诉你哪些装配类没通过条件。"
+  },
+  {
+    "title": "统一响应体与全局异常处理最佳实践",
+    "slug": "unified-response-and-exception",
+    "categorySlug": "spring",
+    "tags": ["Spring Boot", "Spring MVC", "踩坑记录"],
+    "publishedAt": "2025-08-13T20:20:00",
+    "summary": "用 @RestControllerAdvice 统一封装响应结构与异常码，让前后端契约清晰。",
+    "contentMd": "# 统一响应体与全局异常处理最佳实践\n\n## 统一响应体\n```java\n@Data\npublic class R<T> {\n    private int code;\n    private String message;\n    private T data;\n    private long timestamp = System.currentTimeMillis();\n\n    public static <T> R<T> ok(T data) { /* code = 0 */ }\n    public static <T> R<T> fail(int code, String message) { /* ... */ }\n}\n```\n\n## 全局异常处理\n```java\n@RestControllerAdvice\npublic class GlobalExceptionHandler {\n\n    @ExceptionHandler(BusinessException.class)\n    public R<Void> handleBusiness(BusinessException e) {\n        return R.fail(e.getCode(), e.getMessage());\n    }\n\n    @ExceptionHandler(MethodArgumentNotValidException.class)\n    public R<Void> handleValid(MethodArgumentNotValidException e) {\n        String msg = e.getBindingResult().getFieldErrors().stream()\n                .map(f -> f.getField() + \": \" + f.getDefaultMessage())\n                .collect(Collectors.joining(\"; \"));\n        return R.fail(400, msg);\n    }\n}\n```\n\n## 三个容易漏的点\n1. @Valid 要写在参数上：@RequestBody @Valid XxxRequest req\n2. BusinessException 不要返回 HTTP 500，让前端统一判断业务码\n3. 兜底 Exception 处理器必须有，否则未预期异常会绕过统一格式\n\n## 实践建议\n错误码用枚举集中管理，禁止散落魔法数字；日志打印完整堆栈，响应里只返回对前端友好的信息。"
+  },
+  {
+    "title": "Spring Boot 3 迁移踩坑记录",
+    "slug": "springboot3-migration-pitfalls",
+    "categorySlug": "spring",
+    "tags": ["Spring Boot", "踩坑记录"],
+    "publishedAt": "2025-09-06T14:50:00",
+    "summary": "javax 改 jakarta、依赖升级与配置变更的完整迁移清单。",
+    "contentMd": "# Spring Boot 3 迁移踩坑记录\n\n## 前置条件\nSpring Boot 3 基于 Spring Framework 6，强制 Java 17 与 Jakarta EE 9。\n\n## 坑 1：javax.* 全部改 jakarta.*\n```java\n// 旧\nimport javax.servlet.http.HttpServletRequest;\n// 新\nimport jakarta.servlet.http.HttpServletRequest;\n```\n涉及 servlet、validation、persistence、annotation 等。批量替换工作量最大。\n\n## 坑 2：spring.factories 改路径\n自动装配从 META-INF/spring.factories 的 EnableAutoConfiguration 主键迁移到 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports。\n\n## 坑 3：配置属性调整\n- spring.redis.* 改 spring.data.redis.*\n- 部分自动配置类被移除，需自行注册\n\n## 坑 4：MyBatis-Plus\n必须换成 mybatis-plus-spring-boot3-starter（老 starter 在 Boot 3 下不可用）。\n\n## 坑 5：Spring Security\nWebSecurityConfigurerAdapter 移除，改为 SecurityFilterChain Bean：\n```java\nhttp.csrf(AbstractHttpConfigurer::disable)\n    .authorizeHttpRequests(a -> a.requestMatchers(\"/api/public/**\").permitAll().anyRequest().authenticated());\n```\n\n## 迁移清单\n1. JDK 17 编译通过 -> 2. 批量 jakarta 替换 -> 3. 依赖版本升级 -> 4. 配置项核对 -> 5. 逐模块回归"
+  },
+  {
+    "title": "Spring Bean 生命周期与循环依赖",
+    "slug": "spring-bean-lifecycle",
+    "categorySlug": "spring",
+    "tags": ["Spring", "源码阅读"],
+    "publishedAt": "2025-09-30T11:35:00",
+    "summary": "Bean 创建全流程、三级缓存如何解决循环依赖，以及为什么构造器注入解决不了。",
+    "contentMd": "# Spring Bean 生命周期与循环依赖\n\n## 生命周期\n实例化 -> 属性填充 -> BeanNameAware 等 Aware 回调 -> BeanPostProcessor#postProcessBeforeInitialization -> InitializingBean / init-method -> postProcessAfterInitialization（AOP 在此生成代理）-> 就绪 -> DisposableBean / destroy-method。\n\n## 三级缓存\n| 缓存 | 内容 |\n| --- | --- |\n| singletonObjects | 完全初始化好的单例 |\n| earlySingletonObjects | 半成品（提前暴露） |\n| singletonFactories | ObjectFactory，用于生成早期引用 |\n\n```java\naddSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));\n```\n三级缓存的关键是把早期引用的生成延后到真正被依赖时，从而兼容 AOP 代理对象。\n\n## 为什么构造器注入的循环依赖会失败\n构造器注入需要在实例化阶段拿到完整依赖，此时三级缓存里还没有任何东西（对象都没 new 出来），无法提前暴露，所以直接报 BeanCurrentlyInCreationException。\n\n## 解决方式\n1. 改成 setter / 字段注入（不推荐，掩盖设计问题）\n2. @Lazy 延迟加载其中一方\n3. 重构：把公共逻辑下沉到第三方类，这是最优解\n\n## 实践建议\n循环依赖往往是职责划分不清的信号，优先重构而不是依赖容器兜底。"
+  },
+  {
+    "title": "Spring MVC 请求处理全流程",
+    "slug": "springmvc-request-flow",
+    "categorySlug": "spring",
+    "tags": ["Spring MVC", "源码阅读"],
+    "publishedAt": "2025-10-24T19:00:00",
+    "summary": "从 DispatcherServlet 到 HandlerAdapter，一次请求在框架里走过的九站。",
+    "contentMd": "# Spring MVC 请求处理全流程\n\n## 九大组件流转\n1. 请求进入 DispatcherServlet#doDispatch\n2. HandlerMapping 根据 URL 找到 HandlerExecutionChain（含拦截器）\n3. HandlerAdapter 适配不同类型的处理器\n4. 执行拦截器 preHandle\n5. HandlerAdapter 调用目标方法：参数解析 -> 业务执行 -> 返回值处理\n6. 拦截器 postHandle\n7. 异常解析器处理异常（未配置则为默认）\n8. 视图渲染 / @ResponseBody 走 HttpMessageConverter（Jackson）\n9. 拦截器 afterCompletion\n\n## 核心源码\n```java\nprotected void doDispatch(HttpServletRequest request, HttpServletResponse response) {\n    HandlerExecutionChain mappedHandler = getHandler(request);\n    HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());\n    mv = ha.handle(request, response, mappedHandler.getHandler());\n}\n```\n\n## 常见扩展点\n- 参数绑定：Converter / Formatter\n- 统一响应：ResponseBodyAdvice\n- 全局异常：@RestControllerAdvice\n- 跨域：CORS 由 AbstractHandlerMapping 的 CorsProcessor 处理\n\n## 实践建议\n返回 JSON 时不要混用 ModelAndView；日期类型用 @JsonFormat 或全局 ObjectMapper 配置统一序列化格式。"
+  },
+  {
+    "title": "MyBatis 一级缓存与二级缓存",
+    "slug": "mybatis-cache-levels",
+    "categorySlug": "mysql",
+    "tags": ["MyBatis", "MySQL", "性能优化"],
+    "publishedAt": "2025-11-17T10:05:00",
+    "summary": "两级缓存的作用范围、失效场景，以及为什么分布式下要关掉它们。",
+    "contentMd": "# MyBatis 一级缓存与二级缓存\n\n## 一级缓存（SqlSession 级别）\n默认开启。同一个 SqlSession 内多次相同查询，第二次不再发 SQL。\n\n失效场景：执行 insert / update / delete、手动 clearCache、不同的 SqlSession。\n\n```java\ntry (SqlSession session = factory.openSession()) {\n    UserMapper mapper = session.getMapper(UserMapper.class);\n    mapper.selectById(1);   // 查库\n    mapper.selectById(1);   // 命中缓存\n}\n```\n\n## 二级缓存（Mapper namespace 级别）\n需要 <cache/> 或 @CacheNamespace，数据在 SqlSession 提交后填充，跨会话共享。\n\n## 为什么生产通常不用\n- 缓存粒度是 namespace，任何一张表的更新都会清空整个 namespace 缓存\n- 只存在于单机内存，多实例部署会读到脏数据\n- 命中率难以观测\n\n## 推荐做法\n```xml\n<settings>\n    <setting name=\"localCacheScope\" value=\"STATEMENT\"/>\n</settings>\n```\n关闭 MyBatis 缓存，把缓存交给 Redis / Caffeine，并显式管理失效时机。\n\n## 注意\nMyBatis-Plus 不是 MyBatis 的替代品，它只是在 MyBatis 之上做了增强，缓存策略完全一致。"
+  },
+  {
+    "title": "MyBatis-Plus 分页原理与深分页优化",
+    "slug": "mybatis-plus-page-optimize",
+    "categorySlug": "mysql",
+    "tags": ["MyBatis", "MySQL", "索引优化"],
+    "publishedAt": "2025-12-11T15:20:00",
+    "summary": "分页插件如何改写 SQL，以及大偏移量下用延迟关联把查询从 3s 降到 50ms。",
+    "contentMd": "# MyBatis-Plus 分页原理与深分页优化\n\n## 分页插件做了什么\nPaginationInnerInterceptor 拦截待执行 SQL，根据 DbType 改写：\n1. 生成 count 查询（自动去掉 ORDER BY）\n2. 在原 SQL 后追加 LIMIT offset, size\n\n```java\nMybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();\ninterceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));\n```\n\n## 深分页为什么会慢\nLIMIT 100000, 20 需要先扫描并丢弃前 100000 行，回表代价随偏移量线性增长。\n\n## 优化方案：先查 id 再回表（延迟关联）\n```sql\nSELECT a.* FROM t_article a\nJOIN (SELECT id FROM t_article\n      WHERE status = 'published'\n      ORDER BY published_at DESC\n      LIMIT 100000, 20) p ON p.id = a.id\nORDER BY a.published_at DESC;\n```\n子查询只在主键上完成分页（走覆盖索引），避免大量回表。\n\n## 更进一步的方案\n- 游标分页：WHERE id < lastId ORDER BY id DESC LIMIT 20，适合无限滚动\n- 覆盖索引：让 ORDER BY / WHERE 字段都在索引里\n- 限制最大页数，超过阈值提示请细化筛选条件\n\n## 注意\ncount 查询在大表上同样昂贵，可以只对前 N 页精确计数，之后的页数用估算值。"
+  },
+  {
+    "title": "索引失效的十种典型场景",
+    "slug": "mysql-index-invalid-cases",
+    "categorySlug": "mysql",
+    "tags": ["MySQL", "索引优化"],
+    "publishedAt": "2026-01-04T09:40:00",
+    "summary": "结合 EXPLAIN 逐个复现让 B+ 树索引失效的写法。",
+    "contentMd": "# 索引失效的十种典型场景\n\n先记住一条铁律：对索引列做了处理，优化器就用不上它了。\n\n## 清单\n1. 在索引列上使用函数：WHERE DATE(create_time) = '2024-01-01'\n2. 隐式类型转换：phone 是 varchar 却用 WHERE phone = 13800138000\n3. 字符集 / collation 不一致（联表时）\n4. 前导列缺失：联合索引 (a,b,c)，条件只有 b、c\n5. 范围条件右侧失效：a=1 AND b>10 AND c=3 只用到 a、b\n6. LIKE 前置通配符：LIKE '%abc'\n7. OR 连接非索引列：整体退化为全表扫描\n8. != / <> / NOT IN：绝大多数情况无法使用索引\n9. IS NULL / IS NOT NULL 在某些统计信息下失效\n10. 返回行数占比过高：优化器认为全表更快时直接放弃索引\n\n## 怎么查\n```sql\nEXPLAIN SELECT * FROM t_article WHERE status = 'published' ORDER BY published_at DESC;\n```\n看三列：type（至少到 range）、key（是否命中预期索引）、Extra（避免出现 Using filesort、Using temporary）。\n\n## 修复示范\n```sql\n-- 坏\nWHERE DATE(create_time) = '2024-01-01'\n-- 好\nWHERE create_time >= '2024-01-01' AND create_time < '2024-01-02'\n```\n\n## 实践建议\n上线前对新增慢 SQL 一律跑 EXPLAIN；联合索引遵循区分度高、常用在前，并尽量做到覆盖索引。"
+  },
+  {
+    "title": "事务隔离级别与 MVCC 实现原理",
+    "slug": "mysql-isolation-and-mvcc",
+    "categorySlug": "mysql",
+    "tags": ["MySQL", "事务", "源码阅读"],
+    "publishedAt": "2026-01-28T14:10:00",
+    "summary": "四种隔离级别、三种读问题，以及 InnoDB 用 undo log + ReadView 实现的快照读。",
+    "contentMd": "# 事务隔离级别与 MVCC 实现原理\n\n## 四种级别\n| 级别 | 脏读 | 不可重复读 | 幻读 |\n| --- | --- | --- | --- |\n| 读未提交 | 会 | 会 | 会 |\n| 读已提交 RC | 不会 | 会 | 会 |\n| 可重复读 RR | 不会 | 不会 | InnoDB 下基本不会 |\n| 串行化 | 不会 | 不会 | 不会 |\n\nInnoDB 默认是 RR。\n\n## MVCC 三件套\n1. 隐藏列：DB_TRX_ID（最后修改事务 id）、DB_ROLL_PTR（回滚指针）\n2. undo log：以版本链形式保存历史版本\n3. ReadView：记录生成快照时活跃事务列表，用于判断版本可见性\n\n## 为什么 RR 能避免幻读（快照读）\nRR 在第一次快照读时生成 ReadView，之后一直复用，同一事务内看到的数据一致。\n\n```sql\n-- 当前读（加锁，看到最新）\nSELECT * FROM t_order WHERE id = 1 FOR UPDATE;\n-- 快照读（走 ReadView）\nSELECT * FROM t_order WHERE id = 1;\n```\n注意当前读会看到最新数据，仍可能出现幻读，需要用 gap lock / next-key lock 解决。\n\n## 实践建议\n长事务会让 undo log 无法回收、锁长时间持有。监控 information_schema.innodb_trx，避免把 RPC、文件 IO 放在事务里执行。"
+  },
+  {
+    "title": "慢 SQL 优化实战：从 3s 到 30ms",
+    "slug": "slow-sql-optimization",
+    "categorySlug": "mysql",
+    "tags": ["MySQL", "性能优化", "索引优化"],
+    "publishedAt": "2026-02-21T20:30:00",
+    "summary": "用慢日志定位、EXPLAIN 分析、索引重构三步完成一次真实调优。",
+    "contentMd": "# 慢 SQL 优化实战：从 3s 到 30ms\n\n## 1. 找到它\n```sql\nSET GLOBAL slow_query_log = ON;\nSET GLOBAL long_query_time = 1;\n```\n或用 sys.statement_analysis 看统计。\n\n## 2. 原始 SQL\n```sql\nSELECT * FROM t_article\nWHERE DATE(published_at) = CURDATE() - INTERVAL 1 DAY\n  AND status = 'published'\nORDER BY view_count DESC LIMIT 20;\n```\nEXPLAIN 结果：type=ALL, rows=180w, Extra=Using where; Using filesort。\n问题很明显：DATE() 让索引失效 + filesort + SELECT *。\n\n## 3. 改造三板斧\n```sql\nSELECT id, title, slug, view_count, published_at\nFROM t_article\nWHERE status = 'published'\n  AND published_at >= CURDATE() - INTERVAL 1 DAY\n  AND published_at <  CURDATE()\nORDER BY view_count DESC LIMIT 20;\n```\n- 函数改范围查询，让 idx_status_time(status, published_at) 可用\n- SELECT * 改成覆盖所需的联合索引 (status, published_at, view_count)，避免 Using filesort\n\n结果：type=range, rows=326，耗时从 3.1s 降到 32ms。\n\n## 方法总结\n1. 先看 EXPLAIN，不猜\n2. 联合索引覆盖 WHERE + ORDER BY + SELECT，做成覆盖索引\n3. 单表数据量过大再考虑归档或分区\n\n## 注意\nSELECT * 不仅浪费 IO，还会让覆盖索引失效，是收益最低但最常见的写法。"
+  },
+  {
+    "title": "行锁、间隙锁与死锁排查",
+    "slug": "mysql-lock-and-deadlock",
+    "categorySlug": "mysql",
+    "tags": ["MySQL", "事务", "踩坑记录"],
+    "publishedAt": "2026-03-17T11:25:00",
+    "summary": "InnoDB 的 next-key lock 机制与一次生产死锁的完整分析过程。",
+    "contentMd": "# 行锁、间隙锁与死锁排查\n\n## 三种锁\n- Record Lock：锁单条索引记录\n- Gap Lock：锁索引之间的间隙，RR 下防插入（防幻读）\n- Next-Key Lock：前两者组合，RR 默认加锁单位\n\n加锁的基本单位是 next-key lock；等值查询唯一索引上会退化为行锁，范围扫描则锁定区间。\n\n## 死锁怎么来的\n两个事务以相反顺序锁定同一批资源：\n\n```sql\n-- T1\nUPDATE t_order SET status = 1 WHERE id = 10;\nUPDATE t_order SET status = 1 WHERE id = 20;\n-- T2（相反顺序）\nUPDATE t_order SET status = 1 WHERE id = 20;\nUPDATE t_order SET status = 1 WHERE id = 10;\n```\n\nMySQL 有等待超时与死锁检测，检测到会回滚持有资源较少的事务（错误码 1213）。\n\n## 排查\n```sql\nSHOW ENGINE INNODB STATUS\\G\n```\n看 LATEST DETECTED DEADLOCK 段，里面有两条 SQL 的加锁等待关系。也可以用 performance_schema.data_locks 看当前持锁。\n\n## 规避手段\n1. 固定加锁顺序（按主键排序批量更新）\n2. 缩短事务，把查询移出事务\n3. 用 SELECT ... FOR UPDATE 时保证走索引，否则会锁全表\n4. 高并发计数类更新用 INSERT ... ON DUPLICATE KEY UPDATE 替代行级锁\n\n## 注意\nRR 下更新不存在的记录也会产生间隙锁，这是很多莫名其妙死锁的来源。"
+  },
+  {
+    "title": "Redis 数据结构选型指南",
+    "slug": "redis-data-structure-choice",
+    "categorySlug": "redis",
+    "tags": ["Redis", "缓存"],
+    "publishedAt": "2026-04-10T16:45:00",
+    "summary": "String/Hash/List/Set/ZSet 各自适合什么业务场景。",
+    "contentMd": "# Redis 数据结构选型指南\n\n| 结构 | 典型场景 | 代表命令 |\n| --- | --- | --- |\n| String | 分布式锁、验证码、计数器、Token | SET NX PX、INCR |\n| Hash | 对象型购物车、配置项 | HSET/HGETALL |\n| List | 消息队列、最新列表 | LPUSH/RPOP、LRANGE |\n| Set | 去重、共同好友、签到 | SADD/SINTER |\n| ZSet | 排行榜、延迟队列 | ZADD/ZRANGEBYSCORE |\n| Bitmap | 用户签到、在线状态 | SETBIT/BITCOUNT |\n| HyperLogLog | UV 去重计数（有误差） | PFADD/PFCOUNT |\n\n## 三个容易忽略的点\n1. 大 key：String 超过 10KB、Hash/List/ZSet 元素过万就算大 key，会导致网络阻塞、删除卡顿（UNLINK 代替 DEL）\n2. Hash 尽量用 hscan 而不是 hgetall，避免一次返回过多数据\n3. ZSet 的 score 精度是 double，超过 2^53 的整数会丢失精度\n\n## 过期与淘汰\n- 设置过期时间务必打散：EXPIRE key 3600 + random(0, 300)，防止集中过期引发卡顿\n- 内存策略：缓存场景用 allkeys-lru，有持久化诉求用 noeviction + 监控告警\n\n## 实践建议\nKey 统一用 业务:对象:id 前缀（本项目用 theme:active、article:view:{id}），便于 SCAN 与运维；严禁使用 KEYS 命令。"
+  },
+  {
+    "title": "Redis 分布式锁的正确实现",
+    "slug": "redis-distributed-lock",
+    "categorySlug": "redis",
+    "tags": ["Redis", "分布式锁", "分布式"],
+    "publishedAt": "2026-05-04T10:15:00",
+    "summary": "从 SETNX 到 Redisson 看门狗，写对一个可重入、可续期的分布式锁。",
+    "contentMd": "# Redis 分布式锁的正确实现\n\n## 错误示范\n```java\n// 1. setnx 后忘记设置过期 -> 宕机导致死锁\nif (setnx(key, 1)) { try { doWork(); } finally { del(key); } }\n// 2. 删锁不校验身份 -> 删掉了别人的锁\ndel(key);\n```\n\n## 最小可用版本（两条保证）\n1. 加锁时把设置值与设置过期做成原子操作\n2. 解锁时校验唯一身份再删（Lua 脚本保证原子性）\n\n```java\n// 加锁\nSET lock:order:123 requestId NX PX 30000\n\n// 解锁（Lua）\nif redis.call(\"get\", KEYS[1]) == ARGV[1] then\n    return redis.call(\"del\", KEYS[1])\nelse\n    return 0\nend\n```\n\n## 生产直接用 Redisson\n```java\nRLock lock = redissonClient.getLock(\"lock:order:\" + orderId);\nlock.lock(10, TimeUnit.SECONDS);   // 自带看门狗自动续期\ntry {\n    doBusiness();\n} finally {\n    if (lock.isHeldByCurrentThread()) lock.unlock();\n}\n```\nRedisson 提供可重入、自动续期（默认 30s，每 10s 续一次）、以及 isHeldByCurrentThread 防误删。\n\n## 还没解决的问题\n主从切换时锁可能丢失（异步复制）。强一致场景用 Redlock 或改用 ZooKeeper / etcd。\n\n## 实践建议\n锁的粒度尽量细（按业务 id 而不是粗粒度一把锁），并且永远在 finally 里释放。"
+  },
+  {
+    "title": "缓存穿透、击穿与雪崩治理",
+    "slug": "cache-trio-problems",
+    "categorySlug": "redis",
+    "tags": ["Redis", "缓存", "踩坑记录"],
+    "publishedAt": "2026-05-28T19:50:00",
+    "summary": "三个经典缓存问题的成因与对应的标准解法。",
+    "contentMd": "# 缓存穿透、击穿与雪崩治理\n\n## 穿透：查一个一定不存在的 key\n请求每次都落到数据库，缓存形同虚设。\n\n解法：\n- 缓存空值并设置短 TTL（例如 60s）\n- 布隆过滤器提前拦截：不存在直接返回\n\n```java\nif (!bloomFilter.mightContain(id)) {\n    return null;   // 无需查库\n}\n```\n\n## 击穿：一个热点 key 刚好过期\n瞬间大量并发同时回源，DB 压力陡增。\n\n解法：互斥重建锁，只让一个线程回源\n```java\nRLock lock = redisson.getLock(\"rebuild:\" + key);\nif (lock.tryLock(3, TimeUnit.SECONDS)) {\n    try { dbLoadAndSetCache(key); } finally { lock.unlock(); }\n}\n```\n或使用逻辑过期 + 异步刷新，让热点 key 永不过期。\n\n## 雪崩：大批 key 同时失效\n解法：\n- TTL 加随机抖动：expire = base + random(0, 300)\n- 多级缓存（本地 Caffeine + Redis）\n- 限流降级兜底，保证 DB 不被打垮\n\n## 实践建议\n缓存一定设置过期时间，否则无过期的数据一旦 DB 变更就会长期不一致；更新策略优先选 Cache Aside（先更 DB 再删缓存）。"
+  },
+  {
+    "title": "Kafka 消费者组与重平衡",
+    "slug": "kafka-consumer-group",
+    "categorySlug": "mq",
+    "tags": ["Kafka", "消息队列", "源码阅读"],
+    "publishedAt": "2026-06-21T09:20:00",
+    "summary": "消费者组是怎么划分分区的，重平衡为什么慢以及如何优化。",
+    "contentMd": "# Kafka 消费者组与重平衡\n\n## 基本模型\n一个 Topic 分成多个 Partition，一个 Consumer Group 内每个分区只能被一个消费者实例消费。\n消费者数量超过分区数时，多出来的实例会空闲。所以分区数决定了消费端的并行上限。\n\n## 位点管理\n消费位移存在内部 topic __consumer_offsets 里，旧的 zookeeper-based 方式已被废弃。\n\n提交方式：\n- 自动提交：简单但可能重复消费\n- 手动同步 commitSync()：可靠但有阻塞\n- 手动异步 commitAsync()：吞吐高，需在 finally 里补一次同步提交\n\n## 重平衡（Rebalance）\n触发条件：成员增减、主题分区变更、心跳超时（session.timeout.ms）或消费超时（max.poll.interval.ms）。\n\n问题：重平衡期间全组停止消费，涉及状态迁移时会停顿几十秒。\n\n## 优化手段\n1. 提高 max.poll.interval.ms，避免处理慢被踢出组\n2. 使用 Cooperative Incremental Rebalance，分区不整体撤销\n3. 静态成员（group.instance.id），短暂重启不触发重平衡\n4. 消费逻辑必须幂等，配合手动提交位点\n\n## 实践建议\n消费端处理能力不足就加分区数，而不是无脑加消费者；重平衡的告警必须接入监控。"
+  },
+  {
+    "title": "消息丢失与重复消费的幂等方案",
+    "slug": "mq-exactly-once-idempotent",
+    "categorySlug": "mq",
+    "tags": ["消息队列", "分布式", "设计模式"],
+    "publishedAt": "2026-07-15T17:05:00",
+    "summary": "生产端、Broker、消费端三处可能丢消息的地方，以及四种幂等实现。",
+    "contentMd": "# 消息丢失与重复消费的幂等方案\n\n## 消息可能丢在三处\n1. 生产端发送失败：用事务消息或同步发送 + 重试，并把可靠性放到发送方的本地消息表\n2. Broker 丢失：多副本 ISR + acks=all，禁止 acks=1 在核心链路使用\n3. 消费端丢失：先处理业务再 ack，失败要重试而不是直接吞\n\n## 为什么一定会重复\n网络重试、rebalance、事务回滚都可能导致至少一次投递。所以正确做法是：消费端必须幂等。\n\n## 四种幂等实现\n1. 唯一索引：消息带业务唯一号，落库时靠唯一键天然去重\n2. Redis SETNX：SET msg:{id} 1 NX EX 86400 成功才处理\n3. 状态机：更新前判断状态流转是否合法（待支付 -> 已支付）\n4. 去重表：独立的 consumed_message 表记录 msgId，与业务在同一个本地事务里\n\n```sql\nINSERT IGNORE INTO consumed_message(msg_id, created_at) VALUES (?, NOW());\n-- 影响行数为 0 说明已消费过，直接返回\n```\n\n## 实践建议\n幂等键尽量由业务方定义（订单号 + 操作类型），而不是只依赖消息 ID；同时保留一定时长的去重记录（>= 7 天）。"
+  },
+  {
+    "title": "微服务熔断限流与降级实战",
+    "slug": "microservice-circuit-breaker",
+    "categorySlug": "microservice",
+    "tags": ["微服务", "分布式", "性能优化"],
+    "publishedAt": "2026-08-08T13:30:00",
+    "summary": "用 Sentinel / Resilience4j 实现三板斧：限流、熔断、降级。",
+    "contentMd": "# 微服务熔断限流与降级实战\n\n## 三者的区别\n| 手段 | 作用位置 | 目的 |\n| --- | --- | --- |\n| 限流 | 服务端入口 | 保证自身不被压垮 |\n| 熔断 | 调用方 | 依赖不可用时快速失败 |\n| 降级 | 调用方 | 返回兜底数据，保核心链路 |\n\n## 限流算法\n- 令牌桶：允许突发，Guava RateLimiter / Sentinel 的 QPS 模式\n- 漏桶：匀速流出，适合整流\n- 滑动窗口计数：精度介于两者之间\n\n本项目用 Redis 的固定窗口实现 IP 维度限流：\n```\nif (incr(rateKey) > limit) return 操作过于频繁;\nexpire(rateKey, 60);\n```\n\n## 熔断三态\nClosed -> Open（错误率超阈值）-> Half-Open（放少量请求探测）-> Closed / Open。\n\n```java\nCircuitBreakerConfig config = CircuitBreakerConfig.custom()\n        .failureRateThreshold(50)\n        .waitDurationInOpenState(Duration.ofSeconds(10))\n        .slidingWindowSize(20)\n        .build();\n```\n\n## 降级策略\n- 返回静态兜底数据或本地缓存的快照\n- 关闭非核心功能（评论、推荐位）\n- 线程池隔离，避免一个慢依赖拖垮所有资源\n\n## 实践建议\n限流阈值要通过压测确定；熔断恢复要有半开态；所有降级行为必须打日志并计入监控指标。"
+  },
+  {
+    "title": "分布式事务：从 2PC 到 Saga",
+    "slug": "distributed-transaction-saga",
+    "categorySlug": "distributed",
+    "tags": ["分布式", "事务", "微服务"],
+    "publishedAt": "2026-09-05T21:10:00",
+    "summary": "XA、TCC、可靠消息最终一致与 Saga 的取舍。",
+    "contentMd": "# 分布式事务：从 2PC 到 Saga\n\n## 强一致：2PC / XA\n协调者先 prepare，所有参与者都 OK 再 commit。\n\n问题：两阶段之间资源被锁住（数据库行锁、连接），且协调者单点。XA 在微服务里较少使用。\n\n## TCC（Try-Confirm-Cancel）\n```text\nTry:     冻结资金 / 预占库存\nConfirm: 确认扣减\nCancel:  释放预占\n```\n要求每个操作都实现三段接口，对业务侵入最大，但性能比 XA 好得多。\n\n## 可靠消息最终一致（最常用）\n1. 本地事务写入业务数据 + 本地消息表\n2. 独立的投递任务轮询消息表，投递到 MQ\n3. 下游消费成功后再 ack，失败则重试\n\n核心是一个本地事务 + 消息表 + 重试 + 幂等。\n\n## Saga\n把长事务拆成本地事务序列 T1..Tn，每个配反向补偿 C1..Cn：\n\n```text\n正向：T1 -> T2 -> T3\n失败：C2 -> C1（逆序回滚）\n```\n\n## 怎么选\n| 场景 | 方案 |\n| --- | --- |\n| 同库多表 | 本地事务 |\n| 跨服务、允许最终一致 | 可靠消息 / Saga |\n| 实时性强、资金类 | TCC |\n| 遗留系统、遗留数据库 | XA（慎用） |\n\n## 实践建议\n微服务下默认选最终一致；设计时先问一句这个真的需要强一致吗，80% 的场景可以通过去重 + 幂等 + 对账解决。"
+  }
+]

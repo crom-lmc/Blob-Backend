@@ -1,0 +1,843 @@
+{
+  "meta": {
+    "names": ["路人甲","码农小张","Java爱好者","后端老王","架构师小李","匿名用户","夜跑的程序员","测试小妹","运维阿强","产品汪","前端转后端","十年老码农","实习生小陈","技术宅","摸鱼达人","VC不是风投"],
+    "adminName": "博主"
+  },
+  "welcome": {
+    "comments": [
+      "博客搭好了，界面很清爽，支持一下！",
+      "第一篇文章就讲得很细，期待后续更新。",
+      "Markdown 渲染和代码高亮效果不错，点赞。",
+      "请问后台主题编辑器怎么用？想换个主色试试。",
+      "示例文章很适合用来做功能验证，已收藏。",
+      "部署到服务器之后访问有点慢，是不是要配 CDN？",
+      "评论系统自带审核，对防垃圾很有帮助。",
+      "整体体验比很多开源博客好，准备拿来写技术周报。",
+      "搜索功能好像没看到，后续会加站内搜索吗？",
+      "RSS 订阅支持吗？想用阅读器追更。",
+      "代码块的行号显示很友好，长代码也方便定位。",
+      "首页时间轴样式我喜欢，按月份归档一目了然。"
+    ],
+    "replies": [
+      "谢谢支持，主题编辑器在后台「外观」里，改完记得点发布才会生效。",
+      "搜索引擎和 RSS 都在计划里，下个版本会加上。",
+      "访问慢可以先看看是不是没开 Gzip，或者把静态资源丢到对象存储。",
+      "有好的建议欢迎随时在评论区告诉我，会优先排期。",
+      "感谢收藏，后续会保持每周更新一两篇。"
+    ],
+    "spam": [
+      "加个友链呗，我的站 www.lowprice-vps.top 流量很大欢迎互换。",
+      "专业代做百度收录排名，私聊有优惠，微信 same888。"
+    ]
+  },
+  "arraylist-grow-source": {
+    "comments": [
+      "原来无参构造第一次 add 才初始化数组，难怪刚 new 出来 size 是 0。",
+      "1.5 倍扩容这个设计在元素多的时候能减少拷贝次数，很经典。",
+      "请教一下，为什么扩容要用 ArraysSupport.newLength 而不是直接算？",
+      "实际项目里用 guava 的 Lists.newArrayListWithCapacity 提前指定容量更省心。",
+      "如果数据量能预估，initialCapacity 真的能省不少 GC 压力。",
+      "刚踩过坑，循环里频繁 add 导致多次扩容，性能直接掉了一半。",
+      "grow 方法里对 DEFAULTCAPACITY_EMPTY_ELEMENTDATA 的判断挺巧妙的。",
+      "想知道 ElementData 为什么用 transient 修饰？",
+      "和 LinkedList 比，随机访问多的场景肯定选 ArrayList。",
+      "最大容量 Integer.MAX_VALUE - 8 这个边界处理考虑得很周全。",
+      "讲源码建议配一张扩容前后的数组对比图，会更直观。",
+      "扩容拷贝用的是 System.arraycopy，native 方法确实快。"
+    ],
+    "replies": [
+      "ArraysSupport.newLength 把溢出和长度合法性统一处理了，比手写更稳。",
+      "transient 是因为序列化时 ArrayList 自己写 writeObject，只序列化有效元素。",
+      "对的，循环添加大数据量一定要指定容量，我们线上就是这么优化的。",
+      "1.5 倍是时间和空间的折中，太小拷贝频繁，太大浪费内存。",
+      "System.arraycopy 底层是内存块拷贝，比一个个赋值快很多。"
+    ],
+    "spam": [
+      "学 Java 找我，包就业月薪过万，加微信 java_tutor2024。",
+      "ArrayList 教程全文在我博客 www.code-copy.xyz，欢迎来读广告位招租。"
+    ]
+  },
+  "hashmap-conflict-tree": {
+    "comments": [
+      "扰动函数把高 16 位也卷进来，确实能缓解低位碰撞的问题。",
+      "为什么链表转红黑树的阈值是 8？和泊松分布有关系吗？",
+      "树化还要容量到 64，否则优先扩容，这个细节很多人忽略。",
+      "退化成链表的阈值是 6，留了 2 的缓冲防止频繁来回转换。",
+      "多线程下 HashMap 会成环这个老生常谈的坑还有人踩。",
+      "讲得很清楚，建议补一下 TreeNode 的继承结构图。",
+      "key 的 hashCode 分布不均时，再好的扰动也救不了。",
+      "JDK 8 之后链表是尾插法，终于不用怕死循环了。",
+      "负载因子 0.75 默认值是空间和冲突的折中，调小更省冲突但更费内存。",
+      "final 的 hash 扰动和 ConcurrentHashMap 的 spread 思路类似。",
+      "想问下为什么容量必须是 2 的幂？和取模优化有关吧。",
+      "红黑树的查找从 O(n) 降到 O(log n)，攻击场景下很关键。"
+    ],
+    "replies": [
+      "阈值为 8 是经验值，正常分布下单桶链表长度到 8 的概率极低。",
+      "容量是 2 的幂才能用 (n-1)&hash 代替取模，位运算更快。",
+      "尾插法修复了 JDK 7 头插成环的死循环问题，但多线程仍不安全。",
+      "负载因子调小确实冲突少，但扩容更频繁，要看具体场景。",
+      "TreeNode 同时是 LinkedHashMap.Entry 的子类，结构比想象复杂。"
+    ],
+    "spam": [
+      "HashMap 面试题答案都在这 www.interview-cheat.xyz 速记包过。",
+      "高并发不用 HashMap？来我们平台买云服务器送课程，限时活动。"
+    ]
+  },
+  "concurrenthashmap-thread-safe": {
+    "comments": [
+      "JDK 8 把 Segment 去掉换成桶级别 synchronized，锁粒度细太多了。",
+      "为什么放弃了 ReentrantLock 改用 synchronized？JIT 优化立功了。",
+      "size() 不精确这点很容易被忽视，统计场景还是用 mappingCount。",
+      "扩容时多线程协同迁移这个 ForwardingNode 设计很精妙。",
+      "CAS 写空桶 + synchronized 写非空桶，读几乎无锁，性能很好。",
+      "复合操作比如 putIfAbsent 不是原子的吗？需要注意什么？",
+      "和 Hashtable 比完全是降维打击，后者整表锁太重了。",
+      "想问下 clear 操作在大 map 上是怎么保证安全的？",
+      "我们项目里读多写少用 ConcurrentHashMap 替代了读写锁。",
+      "初始化时用 sizeCtl 这个负数标记不同状态，挺巧妙的。",
+      "建议补一张 put 流程的时序图，新手会更易理解。",
+      "弱一致性的迭代器这个特性要提前跟团队讲清楚。"
+    ],
+    "replies": [
+      "putIfAbsent 是原子的，但先 get 再 put 不是，要注意别自己拆开。",
+      "sizeCtl 用不同负数表示初始化中和扩容中，省了一个状态字段。",
+      "迭代器弱一致是设计取舍，宁可读到旧值也不抛并发异常。",
+      "synchronized 在偏向锁/轻量级锁下成本和 CAS 接近，代码还简单。",
+      "clear 是遍历 bucket 逐个置空，迁移中的桶由 ForwardingNode 处理。"
+    ],
+    "spam": [
+      "并发认证考试包过，咨询 QQ 群 882345，名额有限。",
+      "想学源码看我直播 www.jvm-live.fun 每晚八点，刷礼物优先答疑。"
+    ]
+  },
+  "reflect-and-generic-erasure": {
+    "comments": [
+      "擦除后 List<String> 和 List<Integer> 是同一个 class，这点面试常考。",
+      "instanceof 不能带泛型这个限制确实让人头疼。",
+      "TypeReference 通过匿名子类保留泛型签名，Jackson 那套很常用。",
+      "数组不能 new T[] 只能用 Array.newInstance，踩过才记得住。",
+      "重载因为擦除冲突编译不过，第一次见到会很懵。",
+      "我们项目里反射大量调用，记得把 Method 缓存起来。",
+      "想问下 Kotlin 的泛型内联会不会保留类型信息？",
+      "运行时拿不到 T 的类型，那 GSON 的 fromJson 是怎么做的？",
+      "桥接方法在字节码里确实存在，反编译能看到。",
+      "能用接口和 Function 就别用反射，性能差距明显。",
+      "建议补充一个反射设置私有字段可访问性的示例。",
+      "泛型数组协变的问题和擦除放一起讲会更完整。"
+    ],
+    "replies": [
+      "GSON 也是靠 TypeToken 的匿名子类保留泛型，原理和 TypeReference 一样。",
+      "Kotlin 内联具体化类型参数 reified 在编译期展开，能拿到类型。",
+      "setAccessible(true) 在模块化之后受模块权限限制，要注意。",
+      "桥接方法是编译器为保证多态生成的，运行时不感知。",
+      "反射结果一定要缓存，否则 getMethod 每次都遍历很慢。"
+    ],
+    "spam": [
+      "反射黑科技课程，加微信 reflect_master 免费试听一节课。",
+      "你的文章被转载到 www.copy-blog.xyz，点进来看更多广告。"
+    ]
+  },
+  "jvm-memory-and-oom": {
+    "comments": [
+      "元空间取代永久代之后，类元数据终于不用操心容量上限了。",
+      "直接内存 OOM 信息不明显，排查时很容易漏掉 MaxDirectMemorySize。",
+      "容器里一定要用 MaxRAMPercentage，硬编码堆大小很容易被 limit 坑。",
+      "栈溢出一般是递归没出口，把 -Xss 调大只是治标。",
+      "MAT 的 Dominator Tree 看大对象持有链真的好用。",
+      "想问下为什么老生代回收后只下降一点，是不是有内存泄漏？",
+      "线上必配 HeapDumpOnOutOfMemoryError，血泪教训。",
+      "Metaspace 一直涨多半是动态生成类没回收，CGLIB 重灾区。",
+      "G1 和 CMS 在 OOM 表现上差别大吗？",
+      "jstat -gcutil 看 FGC 次数比看日志快多了。",
+      "建议补一张各区域默认比例的图，新手容易混乱。",
+      "unable to create native thread 往往是线程数超系统 ulimit 了。"
+    ],
+    "replies": [
+      "老生代回收后降幅小，基本可以怀疑有长生命周期的大对象持有。",
+      "G1 的 OOM 更偏向 humongous 大对象分配失败，定位方向略有不同。",
+      "CGLIB 动态代理每次生成新类，没配置缓存就会把 Metaspace 撑爆。",
+      "MaxRAMPercentage 会按容器内存百分比算堆，比写死数字灵活。",
+      "native thread 问题先 ulimit -u 看线程上限，再查是不是线程池没上限。"
+    ],
+    "spam": [
+      "JVM 调优一对一指导，日薪三千，加 vip-jvm。",
+      "你的 OOM 案例登在我们站 www.heap-dump-sale.com 详情点击购买。"
+    ]
+  },
+  "full-gc-troubleshooting": {
+    "comments": [
+      "缓存不设上限真的会出事，我们也是这么踩过来的。",
+      "Caffeine 的 maximumSize 加上 expireAfterWrite 基本是标配了。",
+      "jmap 线上抓 dump 会让进程停顿，最好用 HeapDumpOnOutOfMemoryError 自动留。",
+      "P99 从 80ms 涨到 2s，这种突变先看 GC 准没错。",
+      "缓存命中率一定要监控，否则什么时候爆了都不知道。",
+      "想问下你们命中率掉到多少会报警？",
+      "Full GC 频繁但回收效果差，大概率是老年代有根对象引用。",
+      "我们用了本地缓存加 Redis 两级，效果不错。",
+      "recordStats 这个方法很多人不知道，强烈推荐。",
+      "建议把 GC 日志也接进监控，趋势比单次快照有用。",
+      "字典表全量缓存这个场景，其实可以用定时刷新而不是常驻。",
+      "文章把排查链路讲得很顺，适合给新人当 SOP。"
+    ],
+    "replies": [
+      "命中率我们设的是低于 70% 持续五分钟就告警。",
+      "本地缓存一定要加 TTL，否则重启前那批老数据会一直占内存。",
+      "jmap 确实会 STW，生产优先用自动 dump 或 arthas 的 heap 命令。",
+      "两级缓存要注意一致性，我们靠 binlog 失效本地那层。",
+      "GC 日志接 Prometheus + Grafana，趋势图比单次快照好用太多。"
+    ],
+    "spam": [
+      "GC 排查代做，按次收费，联系 telegram @gc_fix。",
+      "更多优化案例在 www.fullgc-pro.xyz 会员专区，扫码入会。"
+    ]
+  },
+  "classloader-delegation": {
+    "comments": [
+      "双亲委派保证核心类不被篡改，这点是安全基石。",
+      "JDBC 用线程上下文类加载器破坏委派，SPI 经典套路。",
+      "Tomcat 的 WebAppClassLoader 优先自己找，实现应用隔离。",
+      "想问下 OSGi 的网状委派和双亲委派有啥本质区别？",
+      "findLoadedClass 不查会重复加载，导致 instanceof 判断失败，踩过。",
+      "动态生成类多了，自定义加载器要自己管卸载。",
+      "Bootstrap 只加载 java.base，这个边界挺清晰的。",
+      "热部署框架基本都靠重建 ClassLoader 实现。",
+      "建议补一张三层加载器的继承关系图。",
+      "为什么 Android 的 DexClassLoader 不走这套？",
+      "类初始化触发时机的那几条记得很全。",
+      "破坏委派不等于不安全，关键是目的。"
+    ],
+    "replies": [
+      "OSGi 是网状委派，每个 bundle 自己决定找谁，比树状灵活但复杂。",
+      "TCCL 就是把父加载器需要的类交给子加载器去加载，打破单向委派。",
+      "热部署重建加载器后旧的对象要能回收，否则就是内存泄漏。",
+      "Android 有自己一套 dex 加载体系，和标准 JVM 不太一样。",
+      "自定义加载器记得重写 findClass 而不是 loadClass，否则可能绕过委派。"
+    ],
+    "spam": [
+      "类加载源码精讲，私教课包教会，加微信 class_load。",
+      "转载本文请注明出处，否则我们将在 www.dmca-bot.xyz 投诉你。"
+    ]
+  },
+  "volatile-visibility": {
+    "comments": [
+      "volatile 不保证原子性，count++ 还是要用 AtomicInteger。",
+      "happens-before 这块讲得清楚，好多文章只说可见性。",
+      "lock 前缀指令同时做缓存一致性和内存屏障，学到了。",
+      "双重检查锁不加 volatile 会拿到半初始化对象，经典坑。",
+      "状态标记位用 volatile 是最常见也最对的用法。",
+      "想问下 volatile 能禁止哪些重排序？",
+      "和 synchronized 比，volatile 更轻量但能力也弱。",
+      "读写都走主内存，会不会比普通变量慢很多？",
+      "建议补一张内存可见性的时序对比图。",
+      "64 位 long 不 volatile 在 32 位机上可能读到半个值。",
+      "单例那段的指令重排例子特别适合面试讲。",
+      "volatile 的写屏障在 x86 上其实几乎无成本，因为本身强内存模型。"
+    ],
+    "replies": [
+      "volatile 禁止写后读重排，具体是 StoreStore 和 StoreLoad 屏障组合。",
+      "x86 本身 TSO 强序，volatile 写只插入一个 StoreLoad 屏障。",
+      "long/double 的非原子处理在 32 位 JVM 上确实可能出现字撕裂。",
+      "volatile 走主内存但 CPU 有缓存行，开销比锁小很多。",
+      "单例双重检查务必 volatile，否则另一个线程可能看到未构造完的引用。"
+    ],
+    "spam": [
+      "并发面试保过班，模拟面试一小时，加微信 java_offer。",
+      "你的 volatile 解析被我们引用了，详见 www.reprint-ad.xyz。"
+    ]
+  },
+  "synchronized-vs-reentrantlock": {
+    "comments": [
+      "低竞争下 synchronized 因为有锁消除锁粗化反而更快。",
+      "需要超时和中断的场景只能上 ReentrantLock。",
+      "finally 里 unlock 这个习惯太重要，忘了就死锁。",
+      "公平锁性能一般，非必要别开。",
+      "多个 Condition 队列是 ReentrantLock 的杀手锏。",
+      "锁 String 常量导致意外共享，这个坑我踩过。",
+      "想问下偏向锁在 JDK 15 之后不是默认关了吗？",
+      "读多写少用 StampedLock 乐观读收益很大。",
+      "锁的范围里别放远程调用，否则持锁时间爆炸。",
+      "建议对比一下两者的等待队列实现。",
+      "synchronized 自动释放真省心，小临界区首选。",
+      "tryLock(timeout) 做防死锁很实用。"
+    ],
+    "replies": [
+      "JDK 15 起偏向锁默认禁用，因为维护成本高于收益。",
+      "StampedLock 乐观读不加锁，写少读多时吞吐提升明显。",
+      "锁对象用 private final 是底线，尤其是 Integer 缓存池别碰。",
+      "公平锁要保证顺序就得排队，吞吐量必然下降。",
+      "Condition 比 Object.wait/notify 灵活，能分多个等待集。"
+    ],
+    "spam": [
+      "高并发实战训练营，学完涨薪，扫码领优惠券。",
+      "本文广告位招租，联系 www.lock-ad.xyz 商务。"
+    ]
+  },
+  "threadpool-params-best-practice": {
+    "comments": [
+      "Executors 那几个工厂方法真不建议用，无界队列太危险。",
+      "CallerRunsPolicy 让调用方线程执行，天然限流，我喜欢。",
+      "IO 密集型核心线程数按 (1 + 等待/计算) 估算很准。",
+      "拒绝策略千万别用 DiscardPolicy，静默丢任务太坑。",
+      "线程池一定要起名字，出事 grep 日志才找得到。",
+      "想问下队列用 ArrayBlockingQueue 还是 LinkedBlockingQueue？",
+      "maximumPoolSize 在队列满之前根本不会生效，很多人理解反了。",
+      "我们监控了活跃度和队列长度，确实能提前发现问题。",
+      "keepAliveTime 对非核心线程才生效，这点要注意。",
+      "建议补一个参数演算的例子。",
+      "CPU 密集型 core = 核数 + 1 就够了。",
+      "线程池混用容易把核心业务拖垮，按业务隔离更好。"
+    ],
+    "replies": [
+      "队列选 ArrayBlockingQueue 有界更安全，Linked 默认也是无界。",
+      "参数生效顺序是 核心 -> 队列 -> 最大，所以队列满才扩容。",
+      "业务隔离很重要，支付和日志千万别共用一个池。",
+      "keepAliveTime 配 TimeUnit 别写错，我们曾把秒写成毫秒。",
+      "监控用 Micrometer 暴露 threadPool 指标最方便。"
+    ],
+    "spam": [
+      "线程池调优内推包过，加微信 pool_master。",
+      "你的配置模板已收录进 www.thread-template.xyz 付费专栏。"
+    ]
+  },
+  "threadlocal-memory-leak": {
+    "comments": [
+      "ThreadLocalMap 的 key 是弱引用，value 强引用，这就是泄漏根源。",
+      "线程池线程长期存活，不 remove 就一直泄漏。",
+      "finally 里 remove 是铁律，不能省。",
+      "TransmittableThreadLocal 解决异步透传，阿里开源的神器。",
+      "想问下为什么 get/set 会顺带清理过期 Entry？",
+      "定义成 private static final 能避免每次 new 新 key。",
+      "我们用 RequestContextHolder 其实就是 ThreadLocal 封装。",
+      "InheritableThreadLocal 在池化场景基本没用。",
+      "建议补一张引用关系图，弱引用那块最绕。",
+      "traceId 用 ThreadLocal 传递，链路追踪标配。",
+      "手动清理完最好再贴个监控看活跃线程数。",
+      "很多人以为 ThreadLocal 会自动回收，其实只回收 key。"
+    ],
+    "replies": [
+      "get/set 会顺手清 key 为 null 的 Entry，但这是被动触发，不能依赖。",
+      "TTL 通过 TtlRunnable 把父线程值拷贝到子线程，池化下才正确。",
+      "RequestContextHolder 底层就是两个 ThreadLocal，一个普通一个可继承。",
+      "一定要 finally remove，我们线上就是忘了 remove 导致内存慢慢涨。",
+      "private static final 保证 key 唯一，否则每次请求 new 出不同 key 更乱。"
+    ],
+    "spam": [
+      "ThreadLocal 内存分析工具卖，加微信 tlocal_pro。",
+      "更多干货在 www.leak-course.xyz，会员专享视频。"
+    ]
+  },
+  "completablefuture-in-action": {
+    "comments": [
+      "一定要传自定义线程池，否则默认跑 ForkJoinPool 公共池被 IO 拖垮。",
+      "thenCombine 合并两个结果比手写 Future 清爽太多。",
+      "allOf 不会返回聚合结果，这点新手很容易以为能直接拿。",
+      "orTimeout 是 JDK 9 才有的，我们还在 JDK 8 只能自己加超时。",
+      "exceptionally 兜底很重要，否则一个异常全链路断。",
+      "想问下 handle 和 whenComplete 有什么区别？",
+      "异步编排层数别超过三层，不然异常定位要命。",
+      "applyToEither 多源取快这个用法很实用。",
+      "我们下单链路用 CF 把风控、库存、优惠并行了，RT 降一半。",
+      "建议补一张 thenApply 和 thenCompose 的对比。",
+      " CompletionStage 接口比 CompletableFuture 更利于解耦。",
+      "CancellationException 也要兜底处理，否则日志一堆红。"
+    ],
+    "replies": [
+      "handle 能拿到结果和异常并转换，whenComplete 只能观察不改返回值。",
+      "thenCompose 是扁平化（类似 flatMap），thenApply 是映射。",
+      "JDK 8 想加超时可以用 future.get(timeout) 包一层，或者自己调度。",
+      "公共 ForkJoinPool 被慢 IO 占满会影响所有用它的任务，务必自建池。",
+      "编排别嵌套太深，拆成方法比链式一坨可读性强。"
+    ],
+    "spam": [
+      "异步编程私教，包你掌握 CF，加微信 cf_teacher。",
+      "本文已收入 www.async-book.xyz 付费电子书，扫码购买。"
+    ]
+  },
+  "springboot-autoconfigure": {
+    "comments": [
+      "@EnableAutoConfiguration 通过 ImportSelector 导入候选类，设计很优雅。",
+      "Spring Boot 3 改成 imports 文件，对原生镜像更友好。",
+      "条件注解那一堆 @ConditionalOnXxx 才是自动装配的灵魂。",
+      "--debug 启动看条件评估报告太好用了，直接告诉你为啥没生效。",
+      "自己写 starter 不生效，八成是 imports 文件名路径写错。",
+      "想问下 AutoConfiguration 和 @Component 顺序谁先？",
+      "@ConditionalOnMissingBean 让用户自定义的 Bean 优先生效，扩展点很稳。",
+      "我们内部 starter 跑了三年，靠的就是这套机制。",
+      "建议补一张自动装配的时序图。",
+      "spring.factories 被废弃后，老项目迁移要注意。",
+      "condition 评估报告里 excluded 那段也值得看。",
+      "自动配置类记得加 @AutoConfiguration 而不是 @Configuration。"
+    ],
+    "replies": [
+      "自动配置类排在用户 Bean 之后，所以 @ConditionalOnMissingBean 能让你覆盖。",
+      "Boot 3 的 imports 文件在 META-INF/spring 下，名字要一字不差。",
+      "--debug 输出的 CONDITION EVALUATION REPORT 是排查标配。",
+      "自动配置类用 @AutoConfiguration 才能参与排序，普通 @Configuration 不行。",
+      "starter 不生效先查 classpath 有没有引到，再查条件注解。"
+    ],
+    "spam": [
+      "Spring Boot 源码课，包学会，加微信 boot_master。",
+      "转载请保留链接，否则投诉至 www.copy-right.xyz。"
+    ]
+  },
+  "unified-response-and-exception": {
+    "comments": [
+      "统一响应体 R<T> 让前后端契约清晰太多。",
+      "BusinessException 不该返回 500，这点说得好。",
+      "@Valid 要写在参数上才生效，漏了就白校验。",
+      "字段校验的错误信息拼接那段很有用，前端直接展示。",
+      "兜底 Exception 处理器必须有，否则未预期异常绕过格式。",
+      "想问下响应体要不要统一包 error 字段？",
+      "错误码用枚举集中管理，拒绝魔法数字。",
+      "我们项目还加了 traceId 方便链路追踪。",
+      "建议响应里只返回对前端友好的信息，完整堆栈打日志。",
+      "MethodArgumentNotValidException 处理最容易漏。",
+      "全局异常最好是 @RestControllerAdvice 而不是 @ControllerAdvice。",
+      "统一响应和分页包装最好分开，否则泛型嵌套很丑。"
+    ],
+    "replies": [
+      "用 @RestControllerAdvice 省得每个方法标 @ResponseBody。",
+      "错误码集中枚举，新增时顺手补文档，别让前端猜。",
+      "完整堆栈只进日志，响应里给 code + message 即可，避免泄露内部信息。",
+      "traceId 放进响应头或 body 都行，排障时让前端一报就定位。",
+      "分页建议单独 PageResult 包装，和 R<T> 区分职责更清晰。"
+    ],
+    "spam": [
+      "后端架构课，学完独立做项目，加微信 back_master。",
+      "你的代码模板登在 www.code-template.xyz，付费下载。"
+    ]
+  },
+  "springboot3-migration-pitfalls": {
+    "comments": [
+      "javax 改 jakarta 是工作量最大的地方，批量替换都未必干净。",
+      "mybatis-plus 必须换 spring-boot3-starter，老的直接起不来。",
+      "Security 去掉 WebSecurityConfigurerAdapter 后改 Bean 式，适应了一阵。",
+      "spring.factories 改 imports 文件，老 starter 直接失效。",
+      "我们迁移踩的最深的是 jakarta 下一些第三方库没跟上。",
+      "想问下虚拟线程在 Boot 3 上好用吗？",
+      "JDK 17 的密封类、record 真香，迁移顺带用上了。",
+      "配置项 spring.redis 改 spring.data.redis 这种小改动最容易漏。",
+      "建议迁移前先跑一遍测试，别只靠编译通过。",
+      "GraalVM 原生镜像这块我们还没敢上。",
+      "最低 Java 17 把一些老机器挡在门外了。",
+      "迁移清单列得很到位，准备照着走一遍。"
+    ],
+    "replies": [
+      "虚拟线程建议先在非核心链路试，pin 问题要测清楚。",
+      "第三方库没跟上 jakarta 的最麻烦，必要时得 fork 改。",
+      "配置项变更最好用 IDE 全局搜索旧前缀别漏。",
+      "GraalVM 原生镜像对反射/动态代理要求高，慎上。",
+      "迁移后务必跑全套回归，编译过不等于行为对。"
+    ],
+    "spam": [
+      "Boot3 迁移代做，按天收费，联系微信 migrate_pro。",
+      "迁移踩坑全集在 www.boot3-book.xyz 会员可读。"
+    ]
+  },
+  "spring-bean-lifecycle": {
+    "comments": [
+      "三级缓存解决循环依赖，关键是提前暴露半成品引用。",
+      "构造器注入的循环依赖救不了，因为对象还没 new 出来。",
+      "AOP 代理是在 postProcessAfterInitialization 生成的，这点常考。",
+      "@Lazy 延迟加载是绕过循环依赖最简单的办法。",
+      "循环依赖往往是职责不清，重构才是正解。",
+      "想问下二级缓存存在的意义是什么？",
+      "Aware 接口回调在填充属性之后、初始化之前。",
+      "DisposableBean 和 destroy-method 优先级要注意。",
+      "建议补一张生命周期的流程图。",
+      "singletonFactories 把早期引用生成延后，兼容了 AOP。",
+      "我们用的是字段注入，虽然不推荐但确实省事。",
+      "BeanPostProcessor 能改几乎所有 Bean，扩展利器。"
+    ],
+    "replies": [
+      "二级缓存存已经创建好的早期对象，避免重复走工厂生成。",
+      "构造器注入循环依赖直接抛 BeanCurrentlyInCreationException。",
+      "AOP 代理在初始化后生成，所以getEarlyReference 要返回可能的代理。",
+      "字段注入方便但有隐藏依赖，团队规范建议用构造器。",
+      "循环依赖出现先想重构，不要一上来就 @Lazy 糊弄。"
+    ],
+    "spam": [
+      "Spring 源码面试课，包教会，加微信 spring_offer。",
+      "你的图解被我们引用，详见 www.bean-ad.xyz。"
+    ]
+  },
+  "springmvc-request-flow": {
+    "comments": [
+      "doDispatch 这九个步骤讲得很顺，适合画成时序图。",
+      "拦截器的三个方法顺序搞清楚，权限校验放 preHandle。",
+      "ResponseBody 走 HttpMessageConverter，Jackson 是默认。",
+      "HandlerAdapter 适配不同处理器，策略模式典范。",
+      "想问下自定义 Converter 怎么注册？",
+      "CORS 由 CorsProcessor 处理，别自己手写过滤器了。",
+      "返回 JSON 别混用 ModelAndView，容易踩坑。",
+      "异常处理最好统一 @RestControllerAdvice。",
+      "日期格式化用 @JsonFormat 全局配 ObjectMapper 都行。",
+      "建议把参数解析器和返回值处理器也展开讲讲。",
+      "postHandle 在视图渲染前，用得相对少。",
+      "HandlerExceptionResolver 排在视图渲染前，拦截器之后。"
+    ],
+    "replies": [
+      "Converter 注册到 WebMvcConfigurer 的 addFormatters 即可。",
+      "全局日期格式在 ObjectMapper 里设，比 @JsonFormat 散落各处好维护。",
+      "CORS 直接配 CorsConfigurationSource，比手写过滤器稳。",
+      "参数解析器可自定义，比如统一解析当前登录用户。",
+      "postHandle 对 @ResponseBody 基本用不上，因为响应已写完。"
+    ],
+    "spam": [
+      "Spring MVC 视频课，限时折扣，加微信 mvc_teacher。",
+      "本文收录进 www.mvc-pro.xyz 付费专栏，扫码查看。"
+    ]
+  },
+  "mybatis-cache-levels": {
+    "comments": [
+      "一级缓存是 SqlSession 级别，同一个会话内第二次命中。",
+      "分布式下二级缓存就是灾难，多实例读到脏数据。",
+      "我们直接把 localCacheScope 设成 STATEMENT 关掉。",
+      "二级缓存粒度是 namespace，一张表更新全清空，命中率感人。",
+      "MyBatis-Plus 只是在 MyBatis 上增强，缓存机制一致。",
+      "想问下为什么刷新缓存要 commit 后才生效？",
+      "缓存交给 Redis 统一管理失效时机更可控。",
+      "一级缓存在嵌套事务里偶尔会读到旧值，要小心。",
+      "建议生产直接关 MyBatis 缓存，用外部缓存。",
+      "insert/update/delete 会清一级缓存，这点要记。",
+      "不同的 SqlSession 一级缓存不共享，容易误解。",
+      "缓存命中率难观测，这也是我们弃用的原因。"
+    ],
+    "replies": [
+      "二级缓存提交后才从暂存进正式，rollback 就丢。",
+      "多实例部署关掉 MyBatis 缓存，统一用 Redis 是对的。",
+      "localCacheScope 设 STATEMENT 每次查询都清，等于关一级缓存。",
+      "嵌套事务里一级缓存可能返回未提交前的快照，要测。",
+      "外部缓存能精细控制 TTL，比 namespace 一刀切强太多。"
+    ],
+    "spam": [
+      "MyBatis 调优课，包你提速，加微信 mybatis_pro。",
+      "你的配置示例在 www.cache-ad.xyz 付费下载。"
+    ]
+  },
+  "mybatis-plus-page-optimize": {
+    "comments": [
+      "PaginationInnerInterceptor 自动拼 LIMIT，开发省心。",
+      "深分页 LIMIT 100000,20 真的慢，回表代价太高。",
+      "延迟关联先查 id 再回表，我们从 3s 降到 50ms。",
+      "游标分页 WHERE id < lastId 适合无限滚动。",
+      "count 查询在大表上也很贵，可以只对前几页精确。",
+      "想问下 count 怎么去掉 ORDER BY？",
+      "覆盖索引让 ORDER BY 和 WHERE 都在索引里，避免 filesort。",
+      "我们限制最大页数，超过提示细化筛选。",
+      "建议补一张执行计划对比图。",
+      "MP 分页插件按 DbType 改写 SQL，多库要配对。",
+      "interceptor.addInnerInterceptor 顺序也有讲究。",
+      "深分页用 ES 或物化视图更彻底，数据库不是万能。"
+    ],
+    "replies": [
+      "插件会自动去掉 count 里的 ORDER BY，所以放心写。",
+      "延迟关联核心是子查询只走主键，省掉大量回表。",
+      "游标分页要有一个递增唯一键，deleted 的数据要特殊处理。",
+      "最大页数限制能挡掉大部分恶意深翻页请求。",
+      "覆盖索引能同时服务 WHERE 和 ORDER BY，filesort 就没了。"
+    ],
+    "spam": [
+      "MP 分页代写，加微信 mp_helper。",
+      "优化教程全集 www.page-book.xyz 会员专享。"
+    ]
+  },
+  "mysql-index-invalid-cases": {
+    "comments": [
+      "对索引列用函数必失效，DATE(create_time) 这种写法太常见。",
+      "隐式类型转换也很坑，phone 是 varchar 却传数字。",
+      "联合索引前导列缺失直接全表，设计时要排好顺序。",
+      "LIKE 前置通配符 %abc 走不了索引。",
+      "EXPLAIN 看 type、key、Extra 三列，少一个都不行。",
+      "想问下范围条件右侧为啥失效？",
+      "OR 连接非索引列会整体退化成全表扫描。",
+      "!= 和 NOT IN 基本用不上索引。",
+      "字符集不一致联表也会失效，这个隐蔽。",
+      "建议把十个场景各配一个 EXPLAIN 截图。",
+      "覆盖索引能顺带解决 Using filesort。",
+      "优化器认为返回比例过高时会放弃索引，别硬来。"
+    ],
+    "replies": [
+      "范围条件后的列无法用于索引过滤，所以 a=1 AND b>10 AND c=3 只用 a,b。",
+      "隐式转换本质是函数转换，等于对列做了处理，索引自然失效。",
+      "Extra 出现 Using filesort 或 Using temporary 都要警惕。",
+      "联表字符集不一致会触发隐式转换，建表时统一 utf8mb4。",
+      "前导列缺失时可以考虑调整索引顺序或建新的联合索引。"
+    ],
+    "spam": [
+      "MySQL 索引优化课，学完面试稳，加微信 sql_pro。",
+      "你的案例被收录 www.index-ad.xyz 付费专栏。"
+    ]
+  },
+  "mysql-isolation-and-mvcc": {
+    "comments": [
+      "InnoDB 默认 RR，靠 MVCC 实现快照读一致性。",
+      "undo log 版本链加 ReadView 判断可见性，设计很妙。",
+      "RR 下快照读复用同一个 ReadView，所以可重复。",
+      "当前读会看到最新，FOR UPDATE 加的是临键锁。",
+      "长事务让 undo log 无法回收，回滚段越积越大。",
+      "想问下 RC 和 RR 的 ReadView 生成时机有什么不同？",
+      "幻读在 RR 快照读下基本不会发生。",
+      "监控 information_schema.innodb_trx 看长事务很有用。",
+      "建议补一张版本链和 ReadView 的示意图。",
+      "事务里别放 RPC 和文件 IO，锁持有时间会爆炸。",
+      "串行化性能太差，一般只在强一致场景用。",
+      "MVCC 只解决读，写冲突还是靠锁。"
+    ],
+    "replies": [
+      "RC 每次快照读都生成新 ReadView，RR 只在第一次生成并复用。",
+      "当前读走 next-key lock，所以 RR 下也能挡住幻读插入。",
+      "长事务不仅挡回收，还容易把整个回滚段撑大。",
+      "事务里调外部接口一定要设短超时，否则锁一直不释放。",
+      "MVCC 让读写不互斥，是 InnoDB 高并发的关键。"
+    ],
+    "spam": [
+      "事务与锁实战，包教包会，加微信 tx_pro。",
+      "更多图解在 www.mvcc-book.xyz 会员专享。"
+    ]
+  },
+  "slow-sql-optimization": {
+    "comments": [
+      "FUNCTION 让索引失效这个坑，三秒变三十毫秒很典型。",
+      "覆盖索引同时解决 WHERE、ORDER BY、SELECT，一举三得。",
+      "SELECT * 既浪费 IO 又让覆盖索引失效，必须改。",
+      "慢日志加 long_query_time 是第一步。",
+      "sys.statement_analysis 看统计比挨个翻日志快。",
+      "想问下覆盖索引的字段顺序怎么排？",
+      "大表再考虑归档或分区，索引不是万能。",
+      "我们上线前必跑 EXPLAIN，形成习惯。",
+      "建议把改造前后的 EXPLAIN 对照贴出来。",
+      "filesort 在大数据量下特别慢，要尽量避免。",
+      "联合索引 (status, published_at, view_count) 这个设计很巧。",
+      "索引改造后 rows 从 180w 降到 300，说服力拉满。"
+    ],
+    "replies": [
+      "覆盖索引顺序一般把等值条件列放前，范围/排序列放后。",
+      "SELECT * 会读所有列，覆盖索引就废了，只取需要的。",
+      "分区对单条查询帮助有限，归档历史数据往往更实在。",
+      "EXPLAIN 看 type 到 range、key 命中、Extra 无 filesort 才算合格。",
+      "慢 SQL 优化三板斧：看计划、建覆盖索引、收字段。"
+    ],
+    "spam": [
+      "SQL 调优一对一，按效果付费，加微信 slow_sql。",
+      "本文收入 www.optimize-ad.xyz 付费案例库。"
+    ]
+  },
+  "mysql-lock-and-deadlock": {
+    "comments": [
+      "RR 下加锁单位是 next-key lock，边界要算清楚。",
+      "等值唯一索引退化为行锁，范围扫描锁区间，这个差异很关键。",
+      "死锁大多是加锁顺序相反导致的。",
+      "SHOW ENGINE INNODB STATUS 看 LATEST DETECTED DEADLOCK 最直接。",
+      "更新不存在的记录也会加间隙锁，很多人没意识到。",
+      "想问下死锁后 MySQL 回滚哪个事务？",
+      "固定加锁顺序能从根上避免循环等待。",
+      "缩短事务、把查询移出事务很重要。",
+      "建议补一张加锁区间的示意图。",
+      "performance_schema.data_locks 能看当前持锁。",
+      "高并发计数用 INSERT ... ON DUPLICATE 替代行锁。",
+      "间隙锁是 RR 防幻读的手段，但也是死锁温床。"
+    ],
+    "replies": [
+      "死锁检测会回滚持有资源较少（undo 量小）的事务。",
+      "加锁顺序按主键排序批量更新，能消除循环等待。",
+      "间隙锁只存在于 RR，RC 下没有，升级隔离级别也能缓解。",
+      "事务里只做必要 DB 操作，RPC 拿到外面去做。",
+      "data_locks 表比 status 输出更细，适合实时排障。"
+    ],
+    "spam": [
+      "MySQL 锁排障，远程协助，加微信 lock_fix。",
+      "死锁案例集 www.deadlock-ad.xyz 会员可读。"
+    ]
+  },
+  "redis-data-structure-choice": {
+    "comments": [
+      "String 的 SET NX PX 做分布式锁最基础。",
+      "大 key 是性能杀手，删除要用 UNLINK 异步。",
+      "ZSet 做排行榜、延迟队列都很好用。",
+      "Bitmap 做签到统计省内存，位运算快。",
+      "HyperLogLog 做 UV 去重，允许误差就选它。",
+      "想问下 Hash 的 hscan 和 hgetall 怎么选？",
+      "Key 统一加业务前缀，SCAN 和运维都方便。",
+      "过期时间一定要打散，否则集中过期卡顿。",
+      "ZSet 的 score 是 double，超大整数会丢精度。",
+      "建议补一张各结构时间复杂度对照表。",
+      "禁用 KEYS 命令，生产事故来源。",
+      "allkeys-lru 适合纯缓存，有持久化诉求用 noeviction 加监控。"
+    ],
+    "replies": [
+      "元素多就用 hscan 分页，hgetall 一次返回容易阻塞。",
+      "大 key 删除用 UNLINK，后台线程慢慢回收不卡主线程。",
+      "Key 前缀规范很重要，出问题 SCAN 一下就能定位。",
+      "score 超过 2^53 会丢精度，超长 ID 要考虑换成别的方案。",
+      "KEYS 在生产会阻塞整个实例，用 SCAN 替代。"
+    ],
+    "spam": [
+      "Redis 架构课，学完做缓存大师，加微信 redis_pro。",
+      "你的选型表被我们引用 www.redis-ad.xyz。"
+    ]
+  },
+  "redis-distributed-lock": {
+    "comments": [
+      "SETNX 后忘了设过期，宕机直接死锁，经典错。",
+      "解锁要用 Lua 校验身份再删，不然删了别人的锁。",
+      "Redisson 的看门狗自动续期太香了。",
+      "isHeldByCurrentThread 防误删，这个细节很到位。",
+      "主从切换可能丢锁，强一致得上 Redlock 或 etcd。",
+      "想问下 Redlock 现在还推荐用吗？",
+      "锁粒度要细，按业务 id 而不是一把大锁。",
+      "finally 里释放是底线，不能省。",
+      "建议补一段 Redisson 看门狗的源码说明。",
+      "可重入锁在递归场景很必要。",
+      "我们项目用 Redisson 基本没再手写 Lua 了。",
+      "锁的 value 用唯一 requestId 才能正确校验归属。"
+    ],
+    "replies": [
+      "Redlock 争议较大，社区有反对声音，强一致建议 etcd/ZK。",
+      "看门狗默认 30s 过期、每 10s 续，业务跑完才释放。",
+      "value 用唯一 ID，Lua 里比对一致才删，防止误删别人。",
+      "锁粒度按订单 id 比按整张表细，并发度更高。",
+      "finally 释放 + 身份校验，是最低限度的正确性保障。"
+    ],
+    "spam": [
+      "分布式锁实战，包你搞定，加微信 lock_master。",
+      "本文在 www.dlock-book.xyz 付费专栏，扫码购买。"
+    ]
+  },
+  "cache-trio-problems": {
+    "comments": [
+      "穿透用布隆过滤器或缓存空值，二选一。",
+      "击穿用互斥重建锁，只放一个线程回源。",
+      "雪崩用 TTL 加随机抖动，别让 key 同时失效。",
+      "缓存空值要设短 TTL，否则空值也占地方。",
+      "多级缓存 Caffeine + Redis 抗雪崩很稳。",
+      "想问下逻辑过期和物理过期的取舍？",
+      "Cache Aside 先更 DB 再删缓存，我们一直这么用。",
+      "限流降级是兜底，DB 不能被打垮。",
+      "建议把三种问题的触发条件画一张对比图。",
+      "布隆过滤器有误判，要和缓存空值配合。",
+      "更新策略优先选删缓存而非更新缓存。",
+      "热点 key 永不过期 + 异步刷新，体验最好。"
+    ],
+    "replies": [
+      "逻辑过期不真删，靠异步线程刷新，适合极强一致性要求的场景。",
+      "Cache Aside 删除缓存更简单，避免双写不一致。",
+      "TTL 抖动随机 0~300s，能打散失效高峰。",
+      "布隆过滤器误判率要调低，否则正常请求也被拦截。",
+      "多级缓存要约定好失效顺序，本地层先失效。"
+    ],
+    "spam": [
+      "缓存架构私教，学完涨薪，加微信 cache_pro。",
+      "你的方案被转载 www.cache-ad.xyz 详情点击。"
+    ]
+  },
+  "kafka-consumer-group": {
+    "comments": [
+      "分区数决定消费并发上限，消费者多了会闲置。",
+      "位点存在 __consumer_offsets，比 zookeeper 时代稳。",
+      "手动提交配合幂等才是正确姿势。",
+      "重平衡期间全组停止消费，要避免频繁触发。",
+      "max.poll.interval.ms 太小，处理慢就被踢出组。",
+      "想问下 Cooperative Rebalance 和默认的有啥区别？",
+      "静态成员 group.instance.id 重启不触发重平衡。",
+      "消费逻辑必须幂等，重复消费难免。",
+      "建议补一张分区分配示意图。",
+      "提交方式：自动简单但可能重复，手动可靠但麻烦。",
+      "rebalance 的告警一定要接，否则消费滞后发现不了。",
+      "异步提交 finally 里补一次同步，防丢位点。"
+    ],
+    "replies": [
+      "Cooperative 增量重平衡只动变化的分区，停顿更小。",
+      "静态成员对滚动重启友好，短暂下线不算离开组。",
+      "消费能力不够先加分区数，而不是无脑加消费者。",
+      "幂等靠唯一键或去重表，重复消费就当没发生。",
+      "异步提交性能好，但关闭时要同步提交兜底。"
+    ],
+    "spam": [
+      "Kafka 实战训练营，内推大厂，加微信 kafka_pro。",
+      "消息中间件课程全集 www.mq-book.xyz 会员专享。"
+    ]
+  },
+  "mq-exactly-once-idempotent": {
+    "comments": [
+      "至少一次投递决定了重复不可避免，消费端必须幂等。",
+      "唯一索引去重最简单粗暴也最有效。",
+      "去重表要和主业务在同一个本地事务里。",
+      "状态机判断流转合法性，防止重复改状态。",
+      "生产端可靠消息靠本地消息表加重试。",
+      "想问下 RocketMQ 的事务消息和这个思路一样吗？",
+      "幂等键最好由业务定义，别只靠消息 ID。",
+      "Broker 侧 acks=all 才不易丢。",
+      "建议补一张端到端去重架构图。",
+      "去重记录保留 7 天以上，覆盖重试窗口。",
+      "消费失败要重试别直接吞，否则数据不一致。",
+      "Redis SETNX 做去重轻量，适合非强一致场景。"
+    ],
+    "replies": [
+      "RocketMQ 事务消息也是半消息 + 回查，思路一致。",
+      "业务幂等键比消息 ID 稳，同一业务多次发也只生效一次。",
+      "去重表和主事务同库同事务，才能保证要么都成要么都回。",
+      "acks=all 再配合 min.insync.replicas 才真正不丢。",
+      "去重窗口要长于最大重试间隔，否则旧消息进来又重复。"
+    ],
+    "spam": [
+      "消息队列高级课，包教会，加微信 mq_master。",
+      "本文收入 www.mq-ad.xyz 付费专栏，扫码查看。"
+    ]
+  },
+  "microservice-circuit-breaker": {
+    "comments": [
+      "限流保自身、熔断保调用方、降级保核心，三者别混。",
+      "令牌桶允许突发，漏桶匀速，看场景选。",
+      "Sentinel 的 QPS 模式本质是令牌桶。",
+      "熔断三态 Closed/Open/Half-Open 设计很经典。",
+      "半开态放少量请求探测，避免一直开着。",
+      "想问下线程池隔离和信号量隔离怎么选？",
+      "降级返回兜底数据，核心链路不能挂。",
+      "限流阈值要压测得出，拍脑袋不靠谱。",
+      "建议补一张 Sentinel 规则配置示例。",
+      "Resilience4j 的 CircuitBreakerConfig 参数很全。",
+      "所有降级行为要打日志进监控，否则黑盒。",
+      "滑动窗口比固定窗口更能平滑统计。"
+    ],
+    "replies": [
+      "线程池隔离资源干净但开销大，信号量轻量但会互相影响。",
+      "降级数据要预先准备好，比如本地缓存的快照。",
+      "熔断恢复必须有半开态，否则容易反复全开。",
+      "压测定阈值是前提，上线后再根据监控微调。",
+      "滑动窗口统计更平滑，但实现比固定窗口复杂些。"
+    ],
+    "spam": [
+      "微服务架构课，学完独立设计，加微信 micro_pro。",
+      "你的熔断方案在 www.cb-ad.xyz 付费下载。"
+    ]
+  },
+  "distributed-transaction-saga": {
+    "comments": [
+      "2PC 资源锁太久，协调者单点，微服务里很少用。",
+      "TCC 侵入大但性能好，资金类场景合适。",
+      "可靠消息最终一致最常用，本地消息表是关键。",
+      "Saga 把长事务拆成序列加补偿，适合跨服务。",
+      "先问一句是否真需要强一致，八成不用。",
+      "想问下 Saga 补偿失败怎么办？",
+      "去重加幂等加对账，能解决大部分问题。",
+      "我们核心链路用 TCC，其他走消息最终一致。",
+      "建议补一张各方案取舍的决策树。",
+      "XA 在老系统迁移时偶尔还会见到。",
+      "补偿操作本身也要幂等，否则雪上加霜。",
+      "最终一致要能被业务接受，对账兜底不能少。"
+    ],
+    "replies": [
+      "Saga 补偿失败要进人工或重试队列，不能就这么丢了。",
+      "TCC 的 Cancel 也要幂等，网络重试会多次触发。",
+      "本地消息表 + 定时投递，是最稳的最终一致实现。",
+      "决策先看一致性要求，再选方案，别一上来就上重方案。",
+      "对账是最后兜底，定期跑批修数据不一致。"
+    ],
+    "spam": [
+      "分布式事务专家课，包你搞定，加微信 dt_pro。",
+      "本文在 www.dt-book.xyz 会员专享，扫码购买。"
+    ]
+  }
+}

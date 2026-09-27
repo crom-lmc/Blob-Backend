@@ -1,0 +1,21 @@
+package com.blog.module.media.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.blog.module.media.entity.Media;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
+
+/**
+ * 媒体 Mapper。
+ */
+@Mapper
+public interface MediaMapper extends BaseMapper<Media> {
+
+    /**
+     * 全部目录（去重）。
+     */
+    @Select("SELECT DISTINCT folder FROM t_media WHERE folder IS NOT NULL AND folder <> '' ORDER BY folder ASC")
+    List<String> selectFolders();
+}

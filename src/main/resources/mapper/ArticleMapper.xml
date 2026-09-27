@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blog.module.article.mapper.ArticleMapper">
+
+    <!-- 通用查询条件，适用于统计与分页两个入口 -->
+    <sql id="articleWhere">
+        <where>
+            <if test="query.status != null and query.status != ''">
+                AND a.status = #{query.status}
+            </if>
+            <if test="query.type != null and query.type != ''">
+                AND a.type = #{query.type}
+            </if>
+            <if test="query.categoryId != null">
+                AND a.category_id = #{query.categoryId}
+            </if>
+            <!-- 父分类聚合：包含其下所有子分类的文章 -->
+            <if test="query.categoryIds != null and query.categoryIds.size() > 0">
+                AND a.category_id IN
+                <foreach collection="query.categoryIds" item="cid" open="(" separator="," close=")">
+                    #{cid}
+                </foreach>
+            </if>
+            <if test="query.isTop != null">
+                AND a.is_top = #{query.isTop}
+            </if>
+            <if test="query.start != null">
+                AND a.published_at &gt;= #{query.start}
+            </if>
+            <if test="query.end != null">
+                AND a.published_at &lt;= #{query.end}
+            </if>
+            <if test="query.keyword != null and query.keyword != ''">
+                AND (
+                a.title LIKE CONCAT('%', #{query.keyword}, '%')
+                OR a.summary LIKE CONCAT('%', #{query.keyword}, '%')
+                OR a.content_md LIKE CONCAT('%', #{query.keyword}, '%')
+                )
+            </if>
+            <if test="query.tagId != null">
+                AND EXISTS (SELECT 1 FROM t_article_tag atg
+                WHERE atg.article_id = a.id AND atg.tag_id = #{query.tagId})
+            </if>
+        </where>
+    </sql>
+
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM t_article a
+        <include refid="articleWhere"/>
+    </select>
+
+    <!--
+      深分页优化：先在覆盖索引上分页拿到 id（只扫描 id，避免大量回表），
+      再按 id 回表取全字段，MySQL 5.7 下大偏移量性能明显优于直接 LIMIT offset,size。
+    -->
+    <select id="selectPageByCondition" resultType="com.blog.module.article.entity.Article">
+        SELECT a.*
+        FROM t_article a
+        JOIN (
+        SELECT a.id
+        FROM t_article a
+        <include refid="articleWhere"/>
+        ORDER BY ${query.orderBy}
+        LIMIT #{offset}, #{size}
+        ) p ON p.id = a.id
+        ORDER BY ${query.orderBy}
+    </select>
+
+    <select id="selectArchiveGroups" resultType="com.blog.module.article.dto.ArchiveGroupVO">
+        SELECT DATE_FORMAT(published_at, '%Y-%m') AS month, COUNT(*) AS count
+        FROM t_article
+        WHERE status = 'published' AND published_at IS NOT NULL
+        GROUP BY DATE_FORMAT(published_at, '%Y-%m')
+        ORDER BY month DESC
+    </select>
+
+    <select id="selectArchiveItems" resultType="com.blog.module.article.dto.ArchiveItemVO">
+        SELECT slug, title, DATE_FORMAT(published_at, '%Y-%m-%d') AS date, published_at AS publishedAt
+        FROM t_article
+        WHERE status = 'published'
+        AND DATE_FORMAT(published_at, '%Y-%m') = #{month}
+        ORDER BY published_at DESC
+    </select>
+
+    <select id="selectDailyArticleCount" resultType="com.blog.module.stat.dto.DailyCountVO">
+        SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS date, COUNT(*) AS count
+        FROM t_article
+        WHERE created_at &gt;= #{start}
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
+        ORDER BY date ASC
+    </select>
+
+    <update id="updateViewCount">
+        UPDATE t_article SET view_count = view_count + #{delta} WHERE id = #{id}
+    </update>
+
+    <select id="selectPublishedCountByCategory" resultType="com.blog.module.article.dto.CategoryCountDTO">
+        SELECT category_id AS categoryId, COUNT(*) AS total
+        FROM t_article
+        WHERE status = 'published' AND category_id IS NOT NULL
+        GROUP BY category_id
+    </select>
+
+    <select id="selectPrev" resultType="com.blog.module.article.entity.Article">
+        SELECT id, title, slug, cover, summary, published_at
+        FROM t_article
+        WHERE status = 'published' AND published_at &lt; #{publishedAt}
+        ORDER BY published_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectNext" resultType="com.blog.module.article.entity.Article">
+        SELECT id, title, slug, cover, summary, published_at
+        FROM t_article
+        WHERE status = 'published' AND published_at &gt; #{publishedAt}
+        ORDER BY published_at ASC
+        LIMIT 1
+    </select>
+</mapper>

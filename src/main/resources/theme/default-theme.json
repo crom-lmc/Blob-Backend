@@ -1,0 +1,70 @@
+{
+  "meta": { "name": "默认主题", "version": 1 },
+  "color": {
+    "primary": "#4f46e5",
+    "primaryHover": "#4338ca",
+    "primarySubtle": "#eef2ff",
+    "bg": "#ffffff",
+    "bgSubtle": "#f7f8fa",
+    "surface": "#ffffff",
+    "text": "#1f2328",
+    "textMuted": "#6b7280",
+    "textInvert": "#ffffff",
+    "border": "#e5e7eb",
+    "link": "#4f46e5",
+    "success": "#16a34a",
+    "warning": "#f59e0b",
+    "danger": "#dc2626"
+  },
+  "font": {
+    "familyBody": "system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+    "familyHeading": "inherit",
+    "familyCode": "'JetBrains Mono', Consolas, monospace",
+    "sizeBase": 16,
+    "scaleRatio": 1.25,
+    "lineHeight": 1.75,
+    "letterSpacing": 0,
+    "headingWeight": 700
+  },
+  "radius": { "sm": 6, "md": 10, "lg": 16, "full": 9999 },
+  "space": {
+    "unit": 4,
+    "contentWidth": 760,
+    "containerWidth": 1200,
+    "sectionGap": 32,
+    "cardPadding": 20
+  },
+  "layout": {
+    "homeLayout": "list",
+    "sidebar": "right",
+    "cardStyle": "flat",
+    "density": "comfortable",
+    "headerStyle": "fixed",
+    "coverPosition": "top",
+    "showToc": true,
+    "showBreadcrumb": true,
+    "showExcerpt": true,
+    "articleMetaOrder": ["date", "category", "tags", "views"],
+    "postCardFields": ["cover", "title", "excerpt", "meta", "tags"]
+  },
+  "homeBlocks": [
+    { "type": "hero", "enabled": true, "order": 1, "props": { "title": "", "subtitle": "", "align": "center" } },
+    { "type": "featured", "enabled": false, "order": 2, "props": { "count": 3 } },
+    { "type": "latest", "enabled": true, "order": 3, "props": { "count": 10 } },
+    { "type": "tagCloud", "enabled": true, "order": 4, "props": { "count": 30 } },
+    { "type": "newsletter", "enabled": false, "order": 5, "props": {} }
+  ],
+  "dark": {
+    "enabled": true,
+    "defaultMode": "system",
+    "tokens": {
+      "bg": "#12141a",
+      "surface": "#1b1e26",
+      "text": "#e6e8ee",
+      "textMuted": "#9aa1b1",
+      "border": "#2a2e38"
+    }
+  },
+  "customCss": "",
+  "customHeadHtml": ""
+}

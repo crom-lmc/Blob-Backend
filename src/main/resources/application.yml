@@ -1,0 +1,104 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: blog-server
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 必须保留：useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8
+    # 说明：mysql-connector-j 8.x 不接受 characterEncoding=utf8mb4（Java 无此编码名），
+    #      使用 UTF-8 时驱动会自动映射为 MySQL 的 utf8mb4 字符集
+    url: jdbc:mysql://127.0.0.1:3306/blog?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: root
+    password: 123456
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 30
+      connection-timeout: 30000
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 20MB
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password:
+      database: 0
+      timeout: 5s
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  mvc:
+    throw-exception-if-no-handler-found: true
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.blog.**.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: 'null'
+    # 生产环境请改为 org.apache.ibatis.logging.nologging.NoLoggingImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+# 自定义业务配置
+blog:
+  jwt:
+    # 生产环境请修改，HS256 要求密钥长度 >= 32 字节
+    secret: blog-system-default-secret-please-change-me-1234567890
+    expire-minutes: 720
+  upload:
+    # 本地磁盘存储根目录
+    root: ./uploads
+    # 对外访问的 URL 前缀
+    url-prefix: /uploads
+    max-size-mb: 5
+    # 注意：svg 可能携带脚本，默认不开放
+    allowed-extensions: jpg,jpeg,png,gif,webp,bmp,ico,pdf,mp4
+  security:
+    # 登录图形验证码（生产建议开启）
+    captcha-enabled: true
+    # 登录失败锁定阈值与时长
+    max-login-fail: 5
+    lock-minutes: 10
+  rate-limit:
+    enabled: true
+    # 公开接口：每 IP 每分钟请求数
+    public-qpm: 300
+    # 评论提交：每 IP 每分钟条数
+    comment-qpm: 3
+    # 登录：每 IP 每分钟次数
+    login-qpm: 10
+  comment:
+    # 默认是否需要审核
+    review-on: true
+    # 敏感词（逗号分隔），命中后替换为 ***
+    sensitive-words: 傻逼,垃圾,广告,代刷,赌博
+  site:
+    # 站点地图与前端域名
+    base-url: http://localhost:8080
+  search:
+    # 检索模式：fulltext（MySQL ngram 全文索引，默认） / like（原 LIKE 逻辑，灰度回退）
+    mode: fulltext
+
+logging:
+  level:
+    root: info
+    com.blog: debug
+    org.springframework.security: warn
