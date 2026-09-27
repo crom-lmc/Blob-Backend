@@ -6,6 +6,7 @@ import com.blog.common.log.OpLog;
 import com.blog.module.user.dto.UserVO;
 import com.blog.module.user.entity.User;
 import com.blog.module.user.service.UserService;
+import com.blog.module.setting.service.SettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
@@ -24,14 +25,16 @@ import java.util.List;
 public class AdminUserController {
 
     private final UserService userService;
+    private final SettingService settingService;
 
     @GetMapping
     @Operation(summary = "用户分页列表")
     public R<PageResult<UserVO>> page(@RequestParam(defaultValue = "1") long page,
-                                      @RequestParam(defaultValue = "20") long size,
+                                      @RequestParam(required = false) Long size,
                                       @RequestParam(required = false) String keyword,
                                       @RequestParam(required = false) String role) {
-        return R.ok(userService.page(page, size, keyword, role).convert(UserVO::from));
+        long pageSize = size != null && size > 0 ? size : settingService.getInt("page_size", 10);
+        return R.ok(userService.page(page, pageSize, keyword, role).convert(UserVO::from));
     }
 
     @GetMapping("/list")

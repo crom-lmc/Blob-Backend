@@ -5,6 +5,7 @@ import com.blog.common.R;
 import com.blog.common.log.OpLog;
 import com.blog.module.media.entity.Media;
 import com.blog.module.media.service.MediaService;
+import com.blog.module.setting.service.SettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
@@ -24,14 +25,16 @@ import java.util.List;
 public class AdminMediaController {
 
     private final MediaService mediaService;
+    private final SettingService settingService;
 
     @GetMapping
     @Operation(summary = "媒体列表")
     public R<PageResult<Media>> page(@RequestParam(defaultValue = "1") long page,
-                                     @RequestParam(defaultValue = "24") long size,
+                                     @RequestParam(required = false) Long size,
                                      @RequestParam(required = false) String folder,
                                      @RequestParam(required = false) String keyword) {
-        return R.ok(mediaService.page(page, size, folder, keyword));
+        long pageSize = size != null && size > 0 ? size : settingService.getInt("page_size", 10);
+        return R.ok(mediaService.page(page, pageSize, folder, keyword));
     }
 
     @GetMapping("/folders")

@@ -4,6 +4,7 @@ import com.blog.common.PageResult;
 import com.blog.common.R;
 import com.blog.module.log.entity.OperationLog;
 import com.blog.module.log.service.OperationLogService;
+import com.blog.module.setting.service.SettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,15 +20,17 @@ import org.springframework.web.bind.annotation.*;
 public class AdminLogController {
 
     private final OperationLogService operationLogService;
+    private final SettingService settingService;
 
     @GetMapping
     @Operation(summary = "操作日志分页列表")
     public R<PageResult<OperationLog>> page(@RequestParam(defaultValue = "1") long page,
-                                            @RequestParam(defaultValue = "20") long size,
+                                            @RequestParam(required = false) Long size,
                                             @RequestParam(required = false) String module,
                                             @RequestParam(required = false) String action,
                                             @RequestParam(required = false) String keyword) {
-        return R.ok(operationLogService.page(page, size, module, action, keyword));
+        long pageSize = size != null && size > 0 ? size : settingService.getInt("page_size", 10);
+        return R.ok(operationLogService.page(page, pageSize, module, action, keyword));
     }
 
     @DeleteMapping("/clean")

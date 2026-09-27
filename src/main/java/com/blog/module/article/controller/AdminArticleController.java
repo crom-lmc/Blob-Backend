@@ -5,6 +5,7 @@ import com.blog.common.R;
 import com.blog.common.log.OpLog;
 import com.blog.module.article.dto.*;
 import com.blog.module.article.service.ArticleService;
+import com.blog.module.setting.service.SettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,6 +28,7 @@ import java.util.Map;
 public class AdminArticleController {
 
     private final ArticleService articleService;
+    private final SettingService settingService;
 
     @GetMapping
     @Operation(summary = "文章分页列表", description = "支持状态/分类/标签/时间/关键词筛选")
@@ -45,7 +47,7 @@ public class AdminArticleController {
                                                      iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME)
                                              java.time.LocalDateTime end,
                                              @RequestParam(defaultValue = "1") long page,
-                                             @RequestParam(defaultValue = "10") long size) {
+                                             @RequestParam(required = false) Long size) {
         ArticleQuery query = new ArticleQuery();
         query.setKeyword(keyword);
         query.setStatus(status);
@@ -56,7 +58,7 @@ public class AdminArticleController {
         query.setStart(start);
         query.setEnd(end);
         query.setPage(page);
-        query.setSize(size);
+        query.setSize(resolvePageSize(size));
         return R.ok(articleService.queryAdmin(query));
     }
 
@@ -140,6 +142,11 @@ public class AdminArticleController {
     public R<Void> rebuildSearch() {
         articleService.rebuildSearchText();
         return R.ok();
+    }
+
+    /** 解析每页条数：传入且合法则优先，否则回退站点设置 page_size（默认 10） */
+    private long resolvePageSize(Long size) {
+        return size != null && size > 0 ? size : settingService.getInt("page_size", 10);
     }
 
     @Data

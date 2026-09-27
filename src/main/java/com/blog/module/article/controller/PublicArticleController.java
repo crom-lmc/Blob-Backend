@@ -48,7 +48,7 @@ public class PublicArticleController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "1") long page,
-            @RequestParam(defaultValue = "10") long size) {
+            @RequestParam(required = false) Long size) {
         ArticleQuery query = new ArticleQuery();
         query.setKeyword(keyword);
         query.setCategoryId(categoryId);
@@ -56,7 +56,7 @@ public class PublicArticleController {
         query.setSort(sort);
         query.setType(type);
         query.setPage(page);
-        query.setSize(size);
+        query.setSize(resolvePageSize(size));
         return R.ok(articleService.queryPublic(query));
     }
 
@@ -89,11 +89,11 @@ public class PublicArticleController {
     @Operation(summary = "分类下的文章")
     public R<PageResult<ArticleListVO>> categoryArticles(@PathVariable String slug,
                                                          @RequestParam(defaultValue = "1") long page,
-                                                         @RequestParam(defaultValue = "10") long size) {
+                                                         @RequestParam(required = false) Long size) {
         ArticleQuery query = new ArticleQuery();
         query.setCategoryId(categoryService.getBySlug(slug).getId());
         query.setPage(page);
-        query.setSize(size);
+        query.setSize(resolvePageSize(size));
         return R.ok(articleService.queryPublic(query));
     }
 
@@ -107,11 +107,11 @@ public class PublicArticleController {
     @Operation(summary = "标签下的文章")
     public R<PageResult<ArticleListVO>> tagArticles(@PathVariable String slug,
                                                     @RequestParam(defaultValue = "1") long page,
-                                                    @RequestParam(defaultValue = "10") long size) {
+                                                    @RequestParam(required = false) Long size) {
         ArticleQuery query = new ArticleQuery();
         query.setTagId(tagService.getBySlug(slug).getId());
         query.setPage(page);
-        query.setSize(size);
+        query.setSize(resolvePageSize(size));
         return R.ok(articleService.queryPublic(query));
     }
 
@@ -131,8 +131,8 @@ public class PublicArticleController {
     @Operation(summary = "全文检索", description = "LIKE + 应用层分词，标题/摘要/正文，热词结果 Redis 缓存")
     public R<PageResult<ArticleListVO>> search(@RequestParam String q,
                                                @RequestParam(defaultValue = "1") long page,
-                                               @RequestParam(defaultValue = "10") long size) {
-        return R.ok(articleService.search(q, page, size));
+                                               @RequestParam(required = false) Long size) {
+        return R.ok(articleService.search(q, page, resolvePageSize(size)));
     }
 
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
@@ -175,5 +175,10 @@ public class PublicArticleController {
                 "theme", theme,
                 "settings", settings,
                 "serverTime", LocalDateTime.now().toString()));
+    }
+
+    /** 解析每页条数：传入且合法则优先使用，否则回退到站点设置 page_size（默认 10） */
+    private long resolvePageSize(Long size) {
+        return size != null && size > 0 ? size : settingService.getInt("page_size", 10);
     }
 }

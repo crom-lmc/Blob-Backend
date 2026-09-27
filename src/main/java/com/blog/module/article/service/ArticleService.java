@@ -112,8 +112,10 @@ public class ArticleService {
 
     /**
      * 后台文章分页列表（全部状态）。
+     * 与前台一致：按父分类筛选时纳入其全部子分类的文章。
      */
     public PageResult<ArticleListVO> queryAdmin(ArticleQuery query) {
+        expandCategory(query);
         return query(query);
     }
 

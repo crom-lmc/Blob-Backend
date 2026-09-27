@@ -5,6 +5,7 @@ import com.blog.common.R;
 import com.blog.common.log.OpLog;
 import com.blog.module.comment.dto.CommentVO;
 import com.blog.module.comment.service.CommentService;
+import com.blog.module.setting.service.SettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
@@ -23,15 +24,17 @@ import java.util.List;
 public class AdminCommentController {
 
     private final CommentService commentService;
+    private final SettingService settingService;
 
     @GetMapping
     @Operation(summary = "评论分页列表", description = "status: pending/approved/spam/deleted")
     public R<PageResult<CommentVO>> page(@RequestParam(defaultValue = "1") long page,
-                                         @RequestParam(defaultValue = "20") long size,
+                                         @RequestParam(required = false) Long size,
                                          @RequestParam(required = false) String status,
                                          @RequestParam(required = false) String keyword,
                                          @RequestParam(required = false) Long articleId) {
-        return R.ok(commentService.page(page, size, status, keyword, articleId));
+        long pageSize = size != null && size > 0 ? size : settingService.getInt("page_size", 10);
+        return R.ok(commentService.page(page, pageSize, status, keyword, articleId));
     }
 
     @PutMapping("/{id}/approve")
