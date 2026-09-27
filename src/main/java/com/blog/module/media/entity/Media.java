@@ -36,6 +36,9 @@ public class Media implements Serializable {
 
     private String folder;
 
+    /** 逻辑目录 ID（t_media_folder），NULL 为未分组 */
+    private Long folderId;
+
     private Long uploaderId;
 
     private LocalDateTime createdAt;

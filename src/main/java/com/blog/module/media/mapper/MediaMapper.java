@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 媒体 Mapper。
@@ -18,4 +19,10 @@ public interface MediaMapper extends BaseMapper<Media> {
      */
     @Select("SELECT DISTINCT folder FROM t_media WHERE folder IS NOT NULL AND folder <> '' ORDER BY folder ASC")
     List<String> selectFolders();
+
+    /**
+     * 按逻辑目录统计媒体数（folder_id 为 NULL 的归入未分组，不计入）。
+     */
+    @Select("SELECT folder_id AS folderId, COUNT(*) AS total FROM t_media WHERE folder_id IS NOT NULL GROUP BY folder_id")
+    List<Map<String, Object>> countByFolderId();
 }

@@ -3,7 +3,9 @@ package com.blog.module.media.controller;
 import com.blog.common.PageResult;
 import com.blog.common.R;
 import com.blog.common.log.OpLog;
+import com.blog.module.media.dto.MediaFolderVO;
 import com.blog.module.media.entity.Media;
+import com.blog.module.media.service.MediaFolderService;
 import com.blog.module.media.service.MediaService;
 import com.blog.module.setting.service.SettingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,30 +27,62 @@ import java.util.List;
 public class AdminMediaController {
 
     private final MediaService mediaService;
+    private final MediaFolderService mediaFolderService;
     private final SettingService settingService;
 
     @GetMapping
-    @Operation(summary = "媒体列表")
+    @Operation(summary = "媒体列表", description = "folderId：不传=全部，0=未分组，>0=指定目录")
     public R<PageResult<Media>> page(@RequestParam(defaultValue = "1") long page,
                                      @RequestParam(required = false) Long size,
                                      @RequestParam(required = false) String folder,
+                                     @RequestParam(required = false) Long folderId,
                                      @RequestParam(required = false) String keyword) {
         long pageSize = size != null && size > 0 ? size : settingService.getInt("page_size", 10);
-        return R.ok(mediaService.page(page, pageSize, folder, keyword));
+        return R.ok(mediaService.page(page, pageSize, folder, folderId, keyword));
     }
 
     @GetMapping("/folders")
-    @Operation(summary = "目录列表")
+    @Operation(summary = "目录列表（存储路径去重，兼容保留）")
     public R<List<String>> folders() {
         return R.ok(mediaService.folders());
+    }
+
+    @GetMapping("/folders/tree")
+    @Operation(summary = "目录树（含各目录媒体数）")
+    public R<List<MediaFolderVO>> folderTree() {
+        return R.ok(mediaFolderService.tree());
+    }
+
+    @PostMapping("/folders")
+    @OpLog(module = "media", action = "folder-create")
+    @Operation(summary = "新增目录", description = "parentId 为 0 或不传时创建顶级目录")
+    public R<Long> createFolder(@RequestBody FolderRequest request) {
+        return R.ok(mediaFolderService.create(request.getName(), request.getParentId()));
+    }
+
+    @PutMapping("/folders/{id}")
+    @OpLog(module = "media", action = "folder-rename")
+    @Operation(summary = "重命名目录")
+    public R<Void> renameFolder(@PathVariable Long id, @RequestBody FolderRequest request) {
+        mediaFolderService.rename(id, request.getName());
+        return R.ok();
+    }
+
+    @DeleteMapping("/folders/{id}")
+    @OpLog(module = "media", action = "folder-delete")
+    @Operation(summary = "删除目录", description = "仅空目录（无子目录且无文件）可删除")
+    public R<Void> deleteFolder(@PathVariable Long id) {
+        mediaFolderService.delete(id);
+        return R.ok();
     }
 
     @PostMapping("/upload")
     @OpLog(module = "media", action = "upload")
     @Operation(summary = "上传文件", description = "类型白名单 + 大小限制（默认 5MB），自动读取图片宽高")
     public R<Media> upload(@RequestPart("file") MultipartFile file,
-                           @RequestParam(required = false, defaultValue = "") String folder) {
-        return R.ok(mediaService.upload(file, folder));
+                           @RequestParam(required = false, defaultValue = "") String folder,
+                           @RequestParam(required = false) Long folderId) {
+        return R.ok(mediaService.upload(file, folder, folderId));
     }
 
     @PostMapping("/upload/chunk/init")
@@ -71,7 +105,7 @@ public class AdminMediaController {
     @Operation(summary = "分片上传 - 合并")
     public R<Media> mergeChunk(@RequestBody ChunkMergeRequest request) {
         return R.ok(mediaService.mergeChunk(request.getUploadId(), request.getOriginalName(),
-                request.getContentType(), request.getFolder()));
+                request.getContentType(), request.getFolder(), request.getFolderId()));
     }
 
     @DeleteMapping("/{id}")
@@ -96,11 +130,18 @@ public class AdminMediaController {
     }
 
     @Data
+    public static class FolderRequest {
+        private String name;
+        private Long parentId;
+    }
+
+    @Data
     public static class ChunkMergeRequest {
         private String uploadId;
         private String originalName;
         private String contentType;
         private String folder;
+        private Long folderId;
     }
 
     @Data

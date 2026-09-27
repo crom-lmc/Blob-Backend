@@ -32,15 +32,15 @@ public class MediaService {
     private final StorageService storageService;
 
     /**
-     * 普通上传。
+     * 普通上传（folderId 为逻辑目录，NULL/0 表示未分组）。
      */
-    public Media upload(MultipartFile file, String folder) {
+    public Media upload(MultipartFile file, String folder, Long folderId) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "请选择要上传的文件");
         }
         try {
             StoredFile stored = storageService.store(file, folder);
-            return saveRecord(stored, folder);
+            return saveRecord(stored, folder, folderId);
         } catch (BusinessException e) {
             throw e;
         } catch (IOException e) {
@@ -70,10 +70,10 @@ public class MediaService {
     /**
      * 分片上传 - 合并。
      */
-    public Media mergeChunk(String uploadId, String originalName, String contentType, String folder) {
+    public Media mergeChunk(String uploadId, String originalName, String contentType, String folder, Long folderId) {
         try {
             StoredFile stored = storageService.mergeChunks(uploadId, originalName, contentType, folder);
-            return saveRecord(stored, folder);
+            return saveRecord(stored, folder, folderId);
         } catch (BusinessException e) {
             throw e;
         } catch (IOException e) {
@@ -81,9 +81,14 @@ public class MediaService {
         }
     }
 
-    public PageResult<Media> page(long page, long size, String folder, String keyword) {
+    /**
+     * 分页列表。folderId 语义：null=全部，0=未分组，>0=指定目录。
+     */
+    public PageResult<Media> page(long page, long size, String folder, Long folderId, String keyword) {
         LambdaQueryWrapper<Media> wrapper = new LambdaQueryWrapper<Media>()
                 .eq(StringUtils.hasText(folder), Media::getFolder, folder == null ? "" : folder)
+                .eq(folderId != null && folderId > 0, Media::getFolderId, folderId)
+                .isNull(folderId != null && folderId == 0, Media::getFolderId)
                 .and(StringUtils.hasText(keyword), w -> w
                         .like(Media::getOriginalName, keyword)
                         .or().like(Media::getFileName, keyword))
@@ -126,7 +131,7 @@ public class MediaService {
         return count == null ? 0 : count;
     }
 
-    private Media saveRecord(StoredFile stored, String folder) {
+    private Media saveRecord(StoredFile stored, String folder, Long folderId) {
         Media media = new Media();
         media.setFileName(stored.getFileName());
         media.setOriginalName(stored.getOriginalName());
@@ -136,6 +141,7 @@ public class MediaService {
         media.setWidth(stored.getWidth());
         media.setHeight(stored.getHeight());
         media.setFolder(folder == null ? "" : folder);
+        media.setFolderId(folderId == null || folderId == 0 ? null : folderId);
         media.setUploaderId(SecurityUtils.currentUserId());
         mediaMapper.insert(media);
         return media;

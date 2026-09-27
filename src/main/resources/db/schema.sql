@@ -123,13 +123,26 @@ CREATE TABLE IF NOT EXISTS `t_media` (
     `size`          BIGINT       NOT NULL DEFAULT 0      COMMENT '字节大小',
     `width`         INT          DEFAULT NULL            COMMENT '图片宽度',
     `height`        INT          DEFAULT NULL            COMMENT '图片高度',
-    `folder`        VARCHAR(100) NOT NULL DEFAULT ''     COMMENT '目录',
+    `folder`        VARCHAR(100) NOT NULL DEFAULT ''     COMMENT '目录（存储路径，兼容保留）',
+    `folder_id`     BIGINT       DEFAULT NULL            COMMENT '逻辑目录 ID（t_media_folder），NULL 为未分组',
     `uploader_id`   BIGINT       DEFAULT NULL            COMMENT '上传者',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     PRIMARY KEY (`id`),
     KEY `idx_media_folder` (`folder`),
+    KEY `idx_media_folder_id` (`folder_id`),
     KEY `idx_media_created` (`created_at`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '媒体库';
+
+-- 媒体目录（树形）
+CREATE TABLE IF NOT EXISTS `t_media_folder` (
+    `id`         BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `name`       VARCHAR(64) NOT NULL                COMMENT '目录名称',
+    `parent_id`  BIGINT      NOT NULL DEFAULT 0      COMMENT '父目录 ID，0 为顶级',
+    `sort`       INT         NOT NULL DEFAULT 0      COMMENT '排序，越小越靠前',
+    `created_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_media_folder_parent` (`parent_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '媒体目录';
 
 -- 主题配置（核心）
 CREATE TABLE IF NOT EXISTS `t_theme` (
@@ -186,3 +199,24 @@ INSERT IGNORE INTO `t_setting` (`setting_key`, `setting_value`, `remark`) VALUES
 ('page_size',        '10',                                              '前台每页条数'),
 ('friend_links',     '[]',                                              '友情链接 JSON 数组'),
 ('social_links',     '[]',                                              '社交链接 JSON 数组');
+
+-- =============================================================
+--  媒体目录初始数据（可重复执行：INSERT IGNORE + UPDATE 幂等）
+-- =============================================================
+
+-- 一级目录「博客logo」
+INSERT IGNORE INTO `t_media_folder` (`name`, `parent_id`, `sort`)
+SELECT '博客logo', 0, 0
+WHERE NOT EXISTS (
+    SELECT 1 FROM `t_media_folder` WHERE `name` = '博客logo' AND `parent_id` = 0
+);
+
+-- 将数据库里已有的媒体文件（尚未分组的）归入「博客logo」目录
+UPDATE `t_media`
+SET `folder_id` = (
+        SELECT `id` FROM `t_media_folder`
+        WHERE `name` = '博客logo' AND `parent_id` = 0
+        LIMIT 1
+    ),
+    `folder` = '博客logo'
+WHERE `folder_id` IS NULL;
