@@ -18,6 +18,9 @@ mysql -uroot -p < src/main/resources/db/schema.sql
 > 如需启用搜索升级 / 主题内置保护等新特性，请再执行 `scripts/` 下两个**幂等**迁移脚本（可重复运行）：
 > - `scripts/tmp_search_ddl.sql`：为 `t_article` 增加 `search_text` 列与 ngram 全文索引，并回填存量数据。
 > - `scripts/tmp_theme_builtin.sql`：为 `t_theme` 增加 `is_builtin` 列，并将「默认主题」标记为内置（不可删除）。
+>
+> `schema.sql` 末尾已内置媒体目录初始化（幂等，重跑安全）：创建「博客logo」一级目录，并将库中
+> `folder_id IS NULL` 的已有媒体归入该目录（含 `folder` 文本字段同步）。已有媒体库文件会自动出现在该目录下。
 
 ### 2. 修改配置
 
