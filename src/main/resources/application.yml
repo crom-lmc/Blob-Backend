@@ -2,16 +2,28 @@ server:
   port: 8080
 
 spring:
+  # 默认激活「本地测试环境」：会从 Nacos 的 blob-local 命名空间拉取配置（见 application-local.yml）
+  #
+  # 线上部署不要改这里，用环境变量/命令行覆盖即可（优先级：命令行参数 > 环境变量 > 本文件）：
+  #   Windows: set SPRING_PROFILES_ACTIVE=prod
+  #   Linux:   export SPRING_PROFILES_ACTIVE=prod
+  #   jar:     java -jar blog-server.jar --spring.profiles.active=prod
+  #
+  # 注意：
+  #   1. spring.profiles.active 只能写在 application.yml（基础文件），
+  #      写在 application-xxx.yml 这类 profile 专属文件里会启动报错。
+  #   2. 不要写成 ${SPRING_PROFILES_ACTIVE:local} 这种自引用占位符，
+  #      宽松绑定会把它解析回自身，触发 Circular placeholder reference。
+  profiles:
+    active: local
   application:
     name: blog-server
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    # 必须保留：useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8
-    # 说明：mysql-connector-j 8.x 不接受 characterEncoding=utf8mb4（Java 无此编码名），
-    #      使用 UTF-8 时驱动会自动映射为 MySQL 的 utf8mb4 字符集
-    url: jdbc:mysql://127.0.0.1:3306/blog?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
-    username: root
-    password: 123456
+    # 数据库连接（driver / url / username / password）已迁移到 Nacos，按环境区分：
+    #   blob-local → 127.0.0.1:3306/blog        blob-prod → 120.53.9.119:3306/blob
+    # URL 需保留参数：useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8
+    #   （mysql-connector-j 8.x 不接受 characterEncoding=utf8mb4，UTF-8 会自动映射为 utf8mb4）
+    # 离线调试（spring.profiles.active=default）时需在本文件临时补回这四项。
     hikari:
       minimum-idle: 5
       maximum-pool-size: 30
@@ -22,8 +34,7 @@ spring:
       max-request-size: 20MB
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
+      # host / port 由 Nacos 提供（本地 127.0.0.1:6379，线上 120.53.9.119:6379）
       password:
       database: 0
       timeout: 5s
@@ -60,12 +71,10 @@ springdoc:
 # 自定义业务配置
 blog:
   jwt:
-    # 生产环境请修改，HS256 要求密钥长度 >= 32 字节
-    secret: blog-system-default-secret-please-change-me-1234567890
+    # 密钥由 Nacos 提供：两个环境各自独立，均为 48 字节随机值（HS256 要求 >= 32 字节）
     expire-minutes: 720
   upload:
-    # 本地磁盘存储根目录
-    root: ./uploads
+    # 存储根目录由 Nacos 提供（本地 / 线上均为 ./uploads）
     # 对外访问的 URL 前缀
     url-prefix: /uploads
     max-size-mb: 5
@@ -90,9 +99,7 @@ blog:
     review-on: true
     # 敏感词（逗号分隔），命中后替换为 ***
     sensitive-words: 傻逼,垃圾,广告,代刷,赌博
-  site:
-    # 站点地图与前端域名
-    base-url: http://localhost:8080
+  # site.base-url 由 Nacos 提供（本地 http://localhost:8080，线上 http://120.53.9.119:8080）
   search:
     # 检索模式：fulltext（MySQL ngram 全文索引，默认） / like（原 LIKE 逻辑，灰度回退）
     mode: fulltext

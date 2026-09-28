@@ -24,16 +24,19 @@ mysql -uroot -p < src/main/resources/db/schema.sql
 
 ### 2. 修改配置
 
-编辑 `src/main/resources/application.yml`：
+环境相关配置（数据库、Redis、JWT 密钥、存储目录、站点域名）**不写在代码里**，统一放在
+Nacos 配置中心，详见「七、Nacos 配置中心」。首次使用请先在 Nacos 的 `blob-local` /
+`blob-prod` 命名空间创建 `blog-server.yaml`：
 
 ```yaml
 spring:
   datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
     # 说明：mysql-connector-j 8.x 不接受 characterEncoding=utf8mb4（Java 无此编码名），
     #      使用 UTF-8 时驱动会自动映射为 MySQL 的 utf8mb4 字符集，效果等价
     url: jdbc:mysql://127.0.0.1:3306/blog?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: 123456
   data:
     redis:
       host: 127.0.0.1
@@ -43,7 +46,12 @@ blog:
     secret: 至少 32 字节的随机字符串
   upload:
     root: ./uploads
+  site:
+    base-url: http://localhost:8080
 ```
+
+`src/main/resources/application.yml` 只保留各环境通用的配置（端口、Jackson、MyBatis、
+限流、评论策略、检索模式等），默认已激活 `local` profile。
 
 ### 3. 启动
 
@@ -236,3 +244,50 @@ com.blog
   token / 布局参数即可。
 - **新增主题配置项**：在 `ThemeConfig` 对应分组加字段 → 在 `ThemeCssRenderer` 中补充变量映射 →
   后台属性面板增加控件，无需改表结构（`config_json` 为 JSON 字符串）。
+
+## 七、Nacos 配置中心（本地 / 线上双环境）
+
+敏感配置（数据库连接、Redis、JWT 密钥）放在 Nacos，由 Nacos 鉴权保护，**不进入代码仓库**。
+两套环境通过 **命名空间** 隔离，DataId 都是 `blog-server.yaml`（group `DEFAULT_GROUP`）。
+
+| 环境 | profile | Nacos 命名空间（名称 → ID） | 数据源 |
+| --- | --- | --- | --- |
+| 本地测试 | `local` | blob-local → `486dbba6-76a7-440e-b2fc-02f5edf0e951` | `127.0.0.1:3306/blog` |
+| 线上生产 | `prod` | blob-prod → `504c8082-ba22-4c55-a595-3ff943687c57` | `120.53.9.119:3306/blob` |
+
+> 注意：客户端配置 namespace 时用的是 **ID**，不是名称；两个环境的 JWT 密钥相互独立。
+
+**依赖**：`spring-cloud-dependencies:2023.0.1` + `spring-cloud-alibaba-dependencies:2023.0.1.0`
+（适配 Spring Boot 3.2.5），实际引入 `spring-cloud-starter-alibaba-nacos-config`。
+
+`application.yml` 中已设置默认 `spring.profiles.active: local`，因此：
+
+```bash
+# 本地测试环境：默认就是 local，无需额外参数
+export NACOS_PASSWORD=你的Nacos密码
+mvn spring-boot:run
+
+# 线上环境：用环境变量（或命令行）覆盖，代码不用改
+export SPRING_PROFILES_ACTIVE=prod
+export NACOS_PASSWORD=你的Nacos密码
+java -jar blog-server.jar
+# 等价写法：java -jar blog-server.jar --spring.profiles.active=prod
+```
+
+优先级：**命令行参数 > 环境变量 `SPRING_PROFILES_ACTIVE` > `application.yml` 的默认值**。
+所以部署机上只要设 `SPRING_PROFILES_ACTIVE=prod` 就会走线上环境。
+
+完全离线调试（不连 Nacos，只用 `application.yml` 里的本地库配置）：
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=default
+```
+
+`blog-server.yaml` 至少需包含：`spring.datasource.*`、`spring.data.redis.*`、`blog.jwt.secret`
+（可按需加 `server.port`、`blog.site.base-url`、`blog.upload.root` 等）。
+
+> 通过 Open API 发布配置时，命名空间参数名是 **`tenant`**，不是 `namespaceId`
+> （`namespaceId` 只用于 `/v1/console/namespaces` 控制台接口），写错会发布到 public。
+
+> Nacos 2.x 端口：客户端需放行 `8848`（HTTP）与 `9848`（gRPC）；`9849`、`7848` 仅集群模式需要。
+> 若只开放 8848，nacos-client 2.x 会一直报 `Client not connected`。
