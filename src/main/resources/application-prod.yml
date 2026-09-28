@@ -8,7 +8,7 @@
 #   java -jar blog-server.jar --spring.profiles.active=prod
 #
 # 说明：命名空间在客户端用「ID」而不是名称。
-#   blog-prod 的 ID = 504c8082-ba22-4c55-a595-3ff943687c57
+#   blog-prod 的 ID = cc59b634-f1d9-4c29-b2a3-0ec4ce83afb1
 # dataId 必须与 Nacos 中一致：blog-server.yaml（注意不是 blog-server.yaml）
 
 spring:
@@ -23,7 +23,7 @@ spring:
       password: ${NACOS_PASSWORD}
       config:
         # blog-prod 命名空间 ID
-        namespace: 504c8082-ba22-4c55-a595-3ff943687c57
+        namespace: cc59b634-f1d9-4c29-b2a3-0ec4ce83afb1
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yaml
         username: ${NACOS_USERNAME}

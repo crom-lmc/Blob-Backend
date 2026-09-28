@@ -17,7 +17,7 @@
 #
 # 说明：
 #   1. 命名空间在客户端用「ID」而不是名称
-#        blog-local 的 ID = 486dbba6-76a7-440e-b2fc-02f5edf0e951
+#        blog-local 的 ID = d67bc8e4-93ba-43ff-b1d1-adc0b9197665
 #   2. dataId 必须与 Nacos 中一致：blog-server.yaml
 #   3. NACOS_PASSWORD 必填，缺失会直接报
 #        "Could not resolve placeholder 'NACOS_PASSWORD'"
@@ -34,7 +34,7 @@ spring:
       password: ${NACOS_PASSWORD}
       config:
         # blog-local 命名空间 ID
-        namespace: 486dbba6-76a7-440e-b2fc-02f5edf0e951
+        namespace: d67bc8e4-93ba-43ff-b1d1-adc0b9197665
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yaml
         username: ${NACOS_USERNAME}
