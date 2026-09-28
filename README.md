@@ -25,8 +25,8 @@ mysql -uroot -p < src/main/resources/db/schema.sql
 ### 2. 修改配置
 
 环境相关配置（数据库、Redis、JWT 密钥、存储目录、站点域名）**不写在代码里**，统一放在
-Nacos 配置中心，详见「七、Nacos 配置中心」。首次使用请先在 Nacos 的 `blob-local` /
-`blob-prod` 命名空间创建 `blog-server.yaml`：
+Nacos 配置中心，详见「七、Nacos 配置中心」。首次使用请先在 Nacos 的 `blog-local` /
+`blog-prod` 命名空间创建 `blog-server.yaml`：
 
 ```yaml
 spring:
@@ -252,8 +252,8 @@ com.blog
 
 | 环境 | profile | Nacos 命名空间（名称 → ID） | 数据源 |
 | --- | --- | --- | --- |
-| 本地测试 | `local` | blob-local → `486dbba6-76a7-440e-b2fc-02f5edf0e951` | `127.0.0.1:3306/blog` |
-| 线上生产 | `prod` | blob-prod → `504c8082-ba22-4c55-a595-3ff943687c57` | `120.53.9.119:3306/blob` |
+| 本地测试 | `local` | blog-local → `486dbba6-76a7-440e-b2fc-02f5edf0e951` | `127.0.0.1:3306/blob` |
+| 线上生产 | `prod` | blog-prod → `504c8082-ba22-4c55-a595-3ff943687c57` | `120.53.9.119:3306/blob` |
 
 > 注意：客户端配置 namespace 时用的是 **ID**，不是名称；两个环境的 JWT 密钥相互独立。
 

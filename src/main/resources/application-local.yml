@@ -1,6 +1,6 @@
 # 本地（测试）环境：--spring.profiles.active=local（application.yml 中已默认激活）
 #
-# 从 Nacos 的 「blob-local」 命名空间拉取 blog-server.yaml，
+# 从 Nacos 的 「blog-local」 命名空间拉取 blog-server.yaml，
 # 该命名空间里的配置指向本机：MySQL 127.0.0.1:3306/blog、Redis 127.0.0.1:6379。
 #
 # 启动（cmd）：
@@ -17,7 +17,7 @@
 #
 # 说明：
 #   1. 命名空间在客户端用「ID」而不是名称
-#        blob-local 的 ID = 486dbba6-76a7-440e-b2fc-02f5edf0e951
+#        blog-local 的 ID = 486dbba6-76a7-440e-b2fc-02f5edf0e951
 #   2. dataId 必须与 Nacos 中一致：blog-server.yaml
 #   3. NACOS_PASSWORD 必填，缺失会直接报
 #        "Could not resolve placeholder 'NACOS_PASSWORD'"
@@ -33,7 +33,7 @@ spring:
       # 必填：取自系统环境变量（Windows 用户级已配置），空密码会被 Nacos 判 403
       password: ${NACOS_PASSWORD}
       config:
-        # blob-local 命名空间 ID
+        # blog-local 命名空间 ID
         namespace: 486dbba6-76a7-440e-b2fc-02f5edf0e951
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yaml
