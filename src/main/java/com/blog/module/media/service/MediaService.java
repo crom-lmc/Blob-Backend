@@ -6,6 +6,8 @@ import com.blog.common.BusinessException;
 import com.blog.common.ErrorCode;
 import com.blog.common.PageResult;
 import com.blog.module.media.entity.Media;
+import com.blog.module.media.entity.MediaFolder;
+import com.blog.module.media.mapper.MediaFolderMapper;
 import com.blog.module.media.mapper.MediaMapper;
 import com.blog.security.SecurityUtils;
 import com.blog.storage.StorageService;
@@ -29,6 +31,7 @@ import java.util.List;
 public class MediaService {
 
     private final MediaMapper mediaMapper;
+    private final MediaFolderMapper folderMapper;
     private final StorageService storageService;
 
     /**
@@ -100,6 +103,44 @@ public class MediaService {
         return mediaMapper.selectFolders();
     }
 
+    /**
+     * 修改媒体文件：重命名（originalName）与移动目录（folderId）。
+     * 两个字段都可选，只更新需要改的那一个。
+     * folderId 语义：>0=移到指定目录，0 或负数=移到未分组。
+     * 注意：只改逻辑归属，磁盘上的物理文件位置不变。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void update(Long id, String name, Long folderId) {
+        Media media = mediaMapper.selectById(id);
+        if (media == null) {
+            throw new BusinessException(ErrorCode.DATA_NOT_FOUND, "媒体文件不存在");
+        }
+        if (name != null && !name.isBlank()) {
+            String trimmed = name.trim();
+            if (trimmed.length() > 200) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "文件名称过长（最多 200 字）");
+            }
+            // 不允许修改扩展名，避免展示名与实际文件类型不符
+            String oldExt = extOf(media.getOriginalName());
+            if (!oldExt.isEmpty() && !oldExt.equalsIgnoreCase(extOf(trimmed))) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "不允许修改文件后缀");
+            }
+            media.setOriginalName(trimmed);
+        }
+        if (folderId != null) {
+            if (folderId > 0) {
+                MediaFolder folder = folderMapper.selectById(folderId);
+                if (folder == null) {
+                    throw new BusinessException(ErrorCode.DATA_NOT_FOUND, "目标目录不存在");
+                }
+                media.setFolderId(folderId);
+            } else {
+                media.setFolderId(null);
+            }
+        }
+        mediaMapper.updateById(media);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Media media = mediaMapper.selectById(id);
@@ -129,6 +170,15 @@ public class MediaService {
     public long count() {
         Long count = mediaMapper.selectCount(null);
         return count == null ? 0 : count;
+    }
+
+    /** 取扩展名（含点）；无扩展名返回空串 */
+    private String extOf(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        int dot = fileName.lastIndexOf('.');
+        return dot < 0 ? "" : fileName.substring(dot);
     }
 
     private Media saveRecord(StoredFile stored, String folder, Long folderId) {

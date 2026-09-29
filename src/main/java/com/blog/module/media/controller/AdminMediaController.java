@@ -41,6 +41,17 @@ public class AdminMediaController {
         return R.ok(mediaService.page(page, pageSize, folder, folderId, keyword));
     }
 
+    @PutMapping("/{id}")
+    @OpLog(module = "media", action = "update")
+    @Operation(summary = "修改媒体文件", description = "重命名与移动目录；两个字段都可选，只更新传入的字段")
+    public R<Void> update(@PathVariable Long id, @RequestBody UpdateMediaRequest request) {
+        if (request == null) {
+            throw new com.blog.common.BusinessException(com.blog.common.ErrorCode.PARAM_ERROR);
+        }
+        mediaService.update(id, request.getName(), request.getFolderId());
+        return R.ok();
+    }
+
     @GetMapping("/folders")
     @Operation(summary = "目录列表（存储路径去重，兼容保留）")
     public R<List<String>> folders() {
@@ -121,6 +132,14 @@ public class AdminMediaController {
     @Operation(summary = "批量删除媒体文件")
     public R<Integer> batchDelete(@RequestBody BatchRequest request) {
         return R.ok(mediaService.delete(request.getIds()));
+    }
+
+    @Data
+    public static class UpdateMediaRequest {
+        /** 新名称，留空表示不改名 */
+        private String name;
+        /** 目标目录 ID：>0=指定目录，0=未分组，null=不移动 */
+        private Long folderId;
     }
 
     @Data
