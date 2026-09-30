@@ -1,3 +1,6 @@
+# Blob-Backend CI/CD —— 基础设施已入库，直接拉取重建即可（无需 stash 兜底）
+# 用法：本文件放到 Blob-Backend 仓库的  .github/workflows/deploy.yml
+# 仓库 Secrets 需配置：SERVER_HOST = 120.53.9.119 ，SSH_KEY = deploy 私钥全文
 name: Deploy Backend
 
 on:
@@ -18,9 +21,9 @@ jobs:
           script: |
             set -e
             cd /opt/Blob-Backend-main
-            git stash
             git pull --ff-only
-            git stash pop
+            # 构建期间先停掉旧容器，腾出 ~512MB 内存，避免 2G 小机 OOM
             docker compose stop blog-server
             NACOS_SERVER_ADDR=120.53.9.119:8848 docker compose up -d --build blog-server
+            # 清理悬空镜像，省磁盘
             docker image prune -f
