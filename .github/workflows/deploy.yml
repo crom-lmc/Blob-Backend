@@ -18,7 +18,9 @@ jobs:
           script: |
             set -e
             cd /opt/Blob-Backend-main
+            git stash
             git pull --ff-only
+            git stash pop
             docker compose stop blog-server
             NACOS_SERVER_ADDR=120.53.9.119:8848 docker compose up -d --build blog-server
             docker image prune -f
