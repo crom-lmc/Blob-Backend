@@ -128,11 +128,24 @@ public class CategoryService {
     }
 
     /**
-     * 删除分类：子分类上移到父级，文章解除关联。
+     * 删除分类：子分类上移到父级。
+     *
+     * <p>已被文章引用的分类<b>不允许删除</b>：删除会把这些文章的 category_id 置空，
+     * 属于静默的数据丢失。需要摘掉引用请先到文章里改分类，再删除。
+     *
+     * @throws BusinessException 分类不存在，或被文章引用（{@link ErrorCode#CATEGORY_IN_USE}）
      */
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         Category category = getById(id);
+
+        // 引用检查：存在引用该分类的文章时直接拒绝
+        Long used = articleMapper.selectCount(new LambdaQueryWrapper<Article>()
+                .eq(Article::getCategoryId, id));
+        if (used != null && used > 0) {
+            throw new BusinessException(ErrorCode.CATEGORY_IN_USE);
+        }
+
         Long parentId = category.getParentId() == null ? 0L : category.getParentId();
         Category childUpdate = new Category();
         childUpdate.setParentId(parentId);

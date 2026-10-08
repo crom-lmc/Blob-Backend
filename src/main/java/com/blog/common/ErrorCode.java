@@ -41,6 +41,8 @@ public enum ErrorCode {
     UPLOAD_FAILED(2006, "文件上传失败"),
     CANNOT_DELETE_ACTIVE_THEME(2007, "不能删除正在使用的主题"),
     CANNOT_DELETE_DEFAULT_THEME(2008, "默认主题不支持删除"),
+    CATEGORY_IN_USE(2009, "该分类已被文章引用，不能删除"),
+    TAG_IN_USE(2010, "该标签已被文章引用，不能删除"),
 
     /* 评论 3xxx */
     COMMENT_CLOSED(3001, "该文章已关闭评论"),

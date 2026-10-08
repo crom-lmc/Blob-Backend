@@ -86,9 +86,25 @@ public class TagService {
         return tag.getId();
     }
 
+    /**
+     * 删除标签。
+     *
+     * <p>已被文章引用的标签<b>不允许删除</b>：删除会连带清掉文章与标签的关联关系。
+     * 如需移除被引用的标签，请使用「合并标签」把文章迁移到目标标签后再删除。
+     *
+     * @throws BusinessException 标签不存在，或被文章引用（{@link ErrorCode#TAG_IN_USE}）
+     */
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         getById(id);
+
+        // 引用检查：存在引用该标签的文章时直接拒绝
+        Long used = articleTagMapper.selectCount(new LambdaQueryWrapper<ArticleTag>()
+                .eq(ArticleTag::getTagId, id));
+        if (used != null && used > 0) {
+            throw new BusinessException(ErrorCode.TAG_IN_USE);
+        }
+
         articleTagMapper.delete(new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getTagId, id));
         tagMapper.deleteById(id);
     }
