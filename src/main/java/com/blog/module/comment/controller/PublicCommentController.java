@@ -33,7 +33,8 @@ public class PublicCommentController {
     public R<PageResult<CommentVO>> comments(@PathVariable String idOrSlug,
                                              @RequestParam(defaultValue = "1") long page,
                                              @RequestParam(required = false) Long size) {
-        Long articleId = articleService.resolve(idOrSlug).getId();
+        // 未发布文章的评论不允许通过前台接口读取
+        Long articleId = articleService.resolvePublished(idOrSlug).getId();
         long pageSize = size != null && size > 0 ? size : settingService.getInt("page_size", 10);
         return R.ok(commentService.articleComments(articleId, page, pageSize));
     }

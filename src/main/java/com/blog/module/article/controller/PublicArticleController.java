@@ -76,7 +76,8 @@ public class PublicArticleController {
     @PostMapping("/articles/{idOrSlug}/like")
     @Operation(summary = "文章点赞", description = "点赞数直接落库，返回最新点赞数")
     public R<Integer> like(@PathVariable String idOrSlug) {
-        return R.ok(articleService.like(articleService.resolve(idOrSlug).getId()));
+        // 未发布文章不允许点赞
+        return R.ok(articleService.like(articleService.resolvePublished(idOrSlug).getId()));
     }
 
     @GetMapping("/categories")

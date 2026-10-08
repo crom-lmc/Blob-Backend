@@ -120,10 +120,11 @@ public class ArticleService {
     }
 
     /**
-     * 文章详情（支持 id 或 slug）。
+     * 前台入口的文章详情（支持 id 或 slug）：仅允许访问「已发布」文章。
+     * 草稿 / 私有文章不允许通过前台链接直接查看。
      */
     public ArticleDetailVO detail(String idOrSlug) {
-        Article article = resolve(idOrSlug);
+        Article article = resolvePublished(idOrSlug);
         return detail(article, true);
     }
 
@@ -167,6 +168,23 @@ public class ArticleService {
         }
         if (article == null) {
             throw new BusinessException(ErrorCode.DATA_NOT_FOUND, "文章不存在");
+        }
+        return article;
+    }
+
+    /**
+     * 前台入口专用：按 id 或 slug 定位文章，且必须是「已发布」状态。
+     *
+     * <p>用于文章详情、自定义页面、点赞、评论列表等所有公开读取路径，
+     * 避免草稿 / 私有文章被直接拼链接访问。后台操作请继续使用 {@link #resolve(String)} 或
+     * {@link #getById(Long)}，它们不做状态限制。
+     *
+     * @throws BusinessException 文章不存在，或状态不是 published
+     */
+    public Article resolvePublished(String idOrSlug) {
+        Article article = resolve(idOrSlug);
+        if (!"published".equals(article.getStatus())) {
+            throw new BusinessException(ErrorCode.ARTICLE_NOT_PUBLISHED);
         }
         return article;
     }
