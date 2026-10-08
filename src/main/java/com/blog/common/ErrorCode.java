@@ -43,6 +43,7 @@ public enum ErrorCode {
     CANNOT_DELETE_DEFAULT_THEME(2008, "默认主题不支持删除"),
     CATEGORY_IN_USE(2009, "该分类已被文章引用，不能删除"),
     TAG_IN_USE(2010, "该标签已被文章引用，不能删除"),
+    CANNOT_DELETE_PUBLISHED_ARTICLE(2011, "已发布的文章不允许删除，请先下线"),
 
     /* 评论 3xxx */
     COMMENT_CLOSED(3001, "该文章已关闭评论"),

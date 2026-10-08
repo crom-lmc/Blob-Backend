@@ -375,12 +375,26 @@ public class ArticleService {
 
     /**
      * 批量删除（同时删除标签关联与评论）。
+     *
+     * <p>已发布的文章<b>不允许删除</b>——单条删除与批量删除走同一条路径，规则一致：
+     * 需要先「下线」转为草稿，再执行删除，避免线上正在被访问的文章被直接抹掉。
+     *
+     * @throws BusinessException 待删除的文章中存在已发布状态的（{@link ErrorCode#CANNOT_DELETE_PUBLISHED_ARTICLE}）
      */
     @Transactional(rollbackFor = Exception.class)
     public int delete(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return 0;
         }
+
+        // 已发布校验：只要命中一篇就整批拒绝，避免「删一半留一半」
+        Long published = articleMapper.selectCount(new LambdaQueryWrapper<Article>()
+                .in(Article::getId, ids)
+                .eq(Article::getStatus, "published"));
+        if (published != null && published > 0) {
+            throw new BusinessException(ErrorCode.CANNOT_DELETE_PUBLISHED_ARTICLE);
+        }
+
         int count = 0;
         for (Long id : ids) {
             Article article = articleMapper.selectById(id);
