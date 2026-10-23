@@ -291,3 +291,5 @@ mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=default
 
 > Nacos 2.x 端口：客户端需放行 `8848`（HTTP）与 `9848`（gRPC）；`9849`、`7848` 仅集群模式需要。
 > 若只开放 8848，nacos-client 2.x 会一直报 `Client not connected`。
+>
+> 
