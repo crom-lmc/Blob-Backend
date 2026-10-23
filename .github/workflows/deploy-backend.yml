@@ -1,7 +1,3 @@
-# Blob-Backend CI/CD —— 新机(81.70.80.209)版
-# 改动：去掉内联 NACOS_SERVER_ADDR，改由各机器 compose 自行提供
-#       （新机 compose 用 nacos:8848 容器名互访；旧机 compose 用 120.53.9.119:8848）
-# 仓库 Secrets：SERVER_HOST = 81.70.80.209 ，SSH_KEY = deploy 私钥全文
 name: Deploy Backend
 
 on:
