@@ -1,8 +1,8 @@
 -- =============================================================
 --  示例分类与标签（Java 后端技术博主可用，可重复执行：INSERT IGNORE）
---  用法：mysql -uroot -p blog < sample-taxonomy.sql
+--  用法：mysql -uroot -p blob < sample-taxonomy.sql
 -- =============================================================
-USE `blog`;
+USE `blob`;
 
 -- ---------- 一级分类 ----------
 INSERT IGNORE INTO `t_category` (`name`, `slug`, `description`, `parent_id`, `sort`, `article_count`) VALUES

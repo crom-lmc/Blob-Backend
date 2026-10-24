@@ -1,20 +1,21 @@
 # 线上（生产）环境：--spring.profiles.active=prod
 #
-# 从 Nacos 的 「blog-prod」 命名空间拉取 blog-server.yaml，
+# 从 Nacos 的 「blob-prod」 命名空间拉取 blob-server.yaml，
 # 该命名空间里的配置指向云服务器：MySQL 120.53.9.119:3306/blob、Redis 120.53.9.119:6379。
 #
 # 启动：
 #   export NACOS_PASSWORD=你的Nacos密码
-#   java -jar blog-server.jar --spring.profiles.active=prod
+#   java -jar blob-backend.jar --spring.profiles.active=prod
 #
 # 说明：命名空间在客户端用「ID」而不是名称。
-#   blog-prod 的 ID = cc59b634-f1d9-4c29-b2a3-0ec4ce83afb1
-# dataId 必须与 Nacos 中一致：blog-server.yaml（注意不是 blog-server.yaml）
+#   blob-prod 的 ID = c0ebc191-0458-4229-a3d7-f92e151832a3
+# dataId 必须与 Nacos 中一致：blob-server.yaml
+#   （dataId 是 Nacos 端文件名，与模块名解耦；改名需先在 Nacos 中同步，否则启动时拉不到配置）
 
 spring:
   config:
     import:
-      - nacos:blog-server.yaml
+      - nacos:blob-server.yaml
   cloud:
     nacos:
       server-addr: ${NACOS_SERVER_ADDR}
@@ -22,8 +23,8 @@ spring:
       # 必填：未设置时启动即报 "Could not resolve placeholder 'NACOS_PASSWORD'"
       password: ${NACOS_PASSWORD}
       config:
-        # blog-prod 命名空间 ID
-        namespace: cc59b634-f1d9-4c29-b2a3-0ec4ce83afb1
+        # blob-prod 命名空间 ID
+        namespace: c0ebc191-0458-4229-a3d7-f92e151832a3
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yaml
         username: ${NACOS_USERNAME}

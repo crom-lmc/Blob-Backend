@@ -7,7 +7,7 @@
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$Base = if ($env:BLOG_BASE) { $env:BLOG_BASE } else { 'http://localhost:8080' }
+$Base = if ($env:BLOB_BASE) { $env:BLOB_BASE } else { 'http://localhost:8080' }
 $RedisCli = if ($env:REDIS_CLI) { $env:REDIS_CLI } else { 'F:\redis-6.2.6\redis-cli.exe' }
 
 function Invoke-Json($Method, $Url, $Body, $Token) {

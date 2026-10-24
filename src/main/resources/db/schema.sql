@@ -2,8 +2,8 @@
 --  博客系统数据库脚本（MySQL 5.7，utf8mb4_general_ci）
 --  可重复执行：建表使用 IF NOT EXISTS，初始数据使用 INSERT IGNORE
 -- =============================================================
-CREATE DATABASE IF NOT EXISTS `blog` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `blog`;
+CREATE DATABASE IF NOT EXISTS `blob` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `blob`;
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS `t_user` (
@@ -191,7 +191,7 @@ INSERT IGNORE INTO `t_setting` (`setting_key`, `setting_value`, `remark`) VALUES
 ('site_subtitle',    '记录生活与技术',                                   '站点副标题'),
 ('site_logo',        '',                                                '站点 Logo URL'),
 ('site_favicon',     '',                                                '站点 Favicon URL'),
-('site_footer',      '© 2024 My Blog. Powered by Blog Server.',         '页脚 HTML'),
+('site_footer',      '© 2024 My blob. Powered by blob Server.',         '页脚 HTML'),
 ('icp_no',           '',                                                '备案号'),
 ('seo_keywords',     '博客,技术,生活',                                   'SEO 关键词'),
 ('seo_desc',         '一个支持动态主题的博客系统',                        'SEO 描述'),

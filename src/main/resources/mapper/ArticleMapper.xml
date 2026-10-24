@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.blog.module.article.mapper.ArticleMapper">
+<mapper namespace="com.blob.module.article.mapper.ArticleMapper">
 
     <!-- 通用查询条件，适用于统计与分页两个入口 -->
     <sql id="articleWhere">
@@ -55,7 +55,7 @@
       深分页优化：先在覆盖索引上分页拿到 id（只扫描 id，避免大量回表），
       再按 id 回表取全字段，MySQL 5.7 下大偏移量性能明显优于直接 LIMIT offset,size。
     -->
-    <select id="selectPageByCondition" resultType="com.blog.module.article.entity.Article">
+    <select id="selectPageByCondition" resultType="com.blob.module.article.entity.Article">
         SELECT a.*
         FROM t_article a
         JOIN (
@@ -68,7 +68,7 @@
         ORDER BY ${query.orderBy}
     </select>
 
-    <select id="selectArchiveGroups" resultType="com.blog.module.article.dto.ArchiveGroupVO">
+    <select id="selectArchiveGroups" resultType="com.blob.module.article.dto.ArchiveGroupVO">
         SELECT DATE_FORMAT(published_at, '%Y-%m') AS month, COUNT(*) AS count
         FROM t_article
         WHERE status = 'published' AND published_at IS NOT NULL
@@ -76,7 +76,7 @@
         ORDER BY month DESC
     </select>
 
-    <select id="selectArchiveItems" resultType="com.blog.module.article.dto.ArchiveItemVO">
+    <select id="selectArchiveItems" resultType="com.blob.module.article.dto.ArchiveItemVO">
         SELECT slug, title, DATE_FORMAT(published_at, '%Y-%m-%d') AS date, published_at AS publishedAt
         FROM t_article
         WHERE status = 'published'
@@ -84,7 +84,7 @@
         ORDER BY published_at DESC
     </select>
 
-    <select id="selectDailyArticleCount" resultType="com.blog.module.stat.dto.DailyCountVO">
+    <select id="selectDailyArticleCount" resultType="com.blob.module.stat.dto.DailyCountVO">
         SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS date, COUNT(*) AS count
         FROM t_article
         WHERE created_at &gt;= #{start}
@@ -96,14 +96,14 @@
         UPDATE t_article SET view_count = view_count + #{delta} WHERE id = #{id}
     </update>
 
-    <select id="selectPublishedCountByCategory" resultType="com.blog.module.article.dto.CategoryCountDTO">
+    <select id="selectPublishedCountByCategory" resultType="com.blob.module.article.dto.CategoryCountDTO">
         SELECT category_id AS categoryId, COUNT(*) AS total
         FROM t_article
         WHERE status = 'published' AND category_id IS NOT NULL
         GROUP BY category_id
     </select>
 
-    <select id="selectPrev" resultType="com.blog.module.article.entity.Article">
+    <select id="selectPrev" resultType="com.blob.module.article.entity.Article">
         SELECT id, title, slug, cover, summary, published_at
         FROM t_article
         WHERE status = 'published' AND published_at &lt; #{publishedAt}
@@ -111,7 +111,7 @@
         LIMIT 1
     </select>
 
-    <select id="selectNext" resultType="com.blog.module.article.entity.Article">
+    <select id="selectNext" resultType="com.blob.module.article.entity.Article">
         SELECT id, title, slug, cover, summary, published_at
         FROM t_article
         WHERE status = 'published' AND published_at &gt; #{publishedAt}

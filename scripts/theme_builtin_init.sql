@@ -6,7 +6,7 @@
 -- 全新部署请直接使用 db/schema.sql 基线（已含 is_builtin 列）。
 --
 -- 执行方式（MySQL 客户端 / CI）：
---   mysql -u<user> -p<pass> blog < scripts/theme_builtin_init.sql
+--   mysql -u<user> -p<pass> blob < scripts/theme_builtin_init.sql
 -- ============================================================
 
 -- 1) 新增 is_builtin 列（幂等）

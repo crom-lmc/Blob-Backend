@@ -1,5 +1,5 @@
 services:
-  blog-server:
+  blob-backend:
     build:
       context: .
       dockerfile: Dockerfile

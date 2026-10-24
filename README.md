@@ -1,4 +1,4 @@
-# 博客系统后端（blog-server）
+# 博客系统后端（blob-backend）
 
 Java 17 + Spring Boot 3.2 + Spring Security(JWT) + MyBatis-Plus + MySQL 5.7 + Redis 实现的博客后端，
 包含**前台公开接口**与**后台管理接口**，核心能力是**可视化动态主题**：所有颜色 / 字体 / 圆角 / 间距 / 布局 /
@@ -12,7 +12,7 @@ Java 17 + Spring Boot 3.2 + Spring Security(JWT) + MyBatis-Plus + MySQL 5.7 + Re
 mysql -uroot -p < src/main/resources/db/schema.sql
 ```
 
-脚本会创建 `blog` 库（utf8mb4_general_ci）与全部 `t_*` 表，并预置站点设置，可重复执行。
+脚本会创建 `blob` 库（utf8mb4_general_ci）与全部 `t_*` 表，并预置站点设置，可重复执行。
 
 > 注意：本项目 `spring.sql.init.mode=never`，`schema.sql` **不会**随应用自动执行，需手动导入。已有表结构后，
 > 如需启用搜索升级 / 主题内置保护等新特性，请再执行 `scripts/` 下两个**幂等**迁移脚本（可重复运行）：
@@ -25,8 +25,8 @@ mysql -uroot -p < src/main/resources/db/schema.sql
 ### 2. 修改配置
 
 环境相关配置（数据库、Redis、JWT 密钥、存储目录、站点域名）**不写在代码里**，统一放在
-Nacos 配置中心，详见「七、Nacos 配置中心」。首次使用请先在 Nacos 的 `blog-local` /
-`blog-prod` 命名空间创建 `blog-server.yaml`：
+Nacos 配置中心，详见「七、Nacos 配置中心」。首次使用请先在 Nacos 的 `blob-local` /
+`blob-prod` 命名空间创建 `blob-server.yaml`：
 
 ```yaml
 spring:
@@ -34,14 +34,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 说明：mysql-connector-j 8.x 不接受 characterEncoding=utf8mb4（Java 无此编码名），
     #      使用 UTF-8 时驱动会自动映射为 MySQL 的 utf8mb4 字符集，效果等价
-    url: jdbc:mysql://127.0.0.1:3306/blog?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://127.0.0.1:3306/blob?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     password: 123456
   data:
     redis:
       host: 127.0.0.1
       port: 6379
-blog:
+blob:
   jwt:
     secret: 至少 32 字节的随机字符串
   upload:
@@ -58,7 +58,7 @@ blog:
 ```bash
 mvn spring-boot:run
 # 或
-mvn clean package && java -jar target/blog-server.jar
+mvn clean package && java -jar target/blob-backend.jar
 ```
 
 ### 4. 首次登录
@@ -74,13 +74,13 @@ mvn clean package && java -jar target/blog-server.jar
 ## 二、工程结构
 
 ```
-com.blog
+com.blob
 ├── common/       统一响应 R、PageResult、ErrorCode、BusinessException、GlobalExceptionHandler
 │   ├── log/      @OpLog 注解 + 切面（后台操作审计）
 │   ├── ratelimit RateLimiter + 拦截器（IP 维度限流）
 │   └── redis/    RedisService（不可用时自动降级为空操作）
 ├── config/       SecurityConfig、MybatisPlusConfig、RedisConfig、WebMvcConfig、OpenApiConfig、
-│                 BlogProperties、DataInitializer
+│                 blobProperties、DataInitializer
 ├── security/     JwtUtil、JwtAuthenticationFilter、UserDetailsServiceImpl、SecurityUser
 ├── storage/      StorageService 接口 + LocalStorageService（预留 OSS / MinIO 实现）
 ├── util/         MarkdownUtils、CssUtils、SlugUtils、SensitiveWordUtils、IpUtils
@@ -118,7 +118,7 @@ com.blog
 | GET | `/tags/{slug}/articles` | 标签下文章 |
 | GET | `/archives` | 年月归档聚合 |
 | GET | `/pages/{slug}` | 自定义页面 |
-| GET | `/search?q=` | 全文检索（ngram 全文索引，`blog.search.mode=fulltext` 默认开启；结果含 `highlight` 高亮字段） |
+| GET | `/search?q=` | 全文检索（ngram 全文索引，`blob.search.mode=fulltext` 默认开启；结果含 `highlight` 高亮字段） |
 | GET | `/sitemap.xml` | 站点地图 |
 
 ### 管理接口 `/api/admin/**`（JWT：admin 全权限，author 仅文章 / 媒体 / 评论）
@@ -221,7 +221,7 @@ com.blog
 - **MySQL 5.7 兼容**：JSON 一律用 `LONGTEXT` 存储、应用层 Jackson 处理；不使用窗口函数 / CTE /
   `JSON_TABLE` / `CHECK` 约束 / 生成列。
 
-- **搜索（双模式可切换）**：`blog.search.mode` 取 `fulltext`（默认）或 `like`。`fulltext` 模式基于
+- **搜索（双模式可切换）**：`blob.search.mode` 取 `fulltext`（默认）或 `like`。`fulltext` 模式基于
   `t_article.search_text` 列 + ngram 全文索引（`ngram_token_size=2`）做中文全文检索，按相关度降序返回，
   且结果 `ArticleListVO` 携带 `highlight` 字段（命中词已用 `<mark>` 包裹并经 XSS 过滤）；`like` 为旧逻辑回退。
   详见 `SEARCH_BACKEND.md` / `SEARCH_UPGRADE.md`。
@@ -238,7 +238,7 @@ com.blog
 
 ## 六、扩展方式
 
-- **替换存储**：实现 `com.blog.storage.StorageService`（如 OSS / MinIO），标注 `@Service` 并移除
+- **替换存储**：实现 `com.blob.storage.StorageService`（如 OSS / MinIO），标注 `@Service` 并移除
   `LocalStorageService` 的 `@Service` 即可，业务代码无需改动。
 - **新增主题预设**：在 `ThemePresets.presets()` 中追加一个 `preset(...)`，基于默认配置覆盖颜色 / 深色
   token / 布局参数即可。
@@ -248,12 +248,15 @@ com.blog
 ## 七、Nacos 配置中心（本地 / 线上双环境）
 
 敏感配置（数据库连接、Redis、JWT 密钥）放在 Nacos，由 Nacos 鉴权保护，**不进入代码仓库**。
-两套环境通过 **命名空间** 隔离，DataId 都是 `blog-server.yaml`（group `DEFAULT_GROUP`）。
+两套环境通过 **命名空间** 隔离，DataId 都是 `blob-server.yaml`（group `DEFAULT_GROUP`）。
+
+> DataId 是 Nacos 端的文件名，与 Maven 模块名（`blob-backend`）解耦；若要改名，需先在 Nacos 中同步创建
+> 新 DataId，再改 `application-*.yml` 里的 `spring.config.import`，否则启动时拉不到配置。
 
 | 环境 | profile | Nacos 命名空间（名称 → ID） | 数据源 |
 | --- | --- | --- | --- |
-| 本地测试 | `local` | blog-local → `486dbba6-76a7-440e-b2fc-02f5edf0e951` | `127.0.0.1:3306/blob` |
-| 线上生产 | `prod` | blog-prod → `504c8082-ba22-4c55-a595-3ff943687c57` | `120.53.9.119:3306/blob` |
+| 本地测试 | `local` | blob-local → `486dbba6-76a7-440e-b2fc-02f5edf0e951` | `127.0.0.1:3306/blob` |
+| 线上生产 | `prod` | blob-prod → `504c8082-ba22-4c55-a595-3ff943687c57` | `120.53.9.119:3306/blob` |
 
 > 注意：客户端配置 namespace 时用的是 **ID**，不是名称；两个环境的 JWT 密钥相互独立。
 
@@ -270,8 +273,8 @@ mvn spring-boot:run
 # 线上环境：用环境变量（或命令行）覆盖，代码不用改
 export SPRING_PROFILES_ACTIVE=prod
 export NACOS_PASSWORD=你的Nacos密码
-java -jar blog-server.jar
-# 等价写法：java -jar blog-server.jar --spring.profiles.active=prod
+java -jar blob-backend.jar
+# 等价写法：java -jar blob-backend.jar --spring.profiles.active=prod
 ```
 
 优先级：**命令行参数 > 环境变量 `SPRING_PROFILES_ACTIVE` > `application.yml` 的默认值**。
@@ -283,8 +286,8 @@ java -jar blog-server.jar
 mvn spring-boot:run -Dspring-boot.run.arguments=--spring.profiles.active=default
 ```
 
-`blog-server.yaml` 至少需包含：`spring.datasource.*`、`spring.data.redis.*`、`blog.jwt.secret`
-（可按需加 `server.port`、`blog.site.base-url`、`blog.upload.root` 等）。
+`blob-server.yaml` 至少需包含：`spring.datasource.*`、`spring.data.redis.*`、`blob.jwt.secret`
+（可按需加 `server.port`、`blob.site.base-url`、`blob.upload.root` 等）。
 
 > 通过 Open API 发布配置时，命名空间参数名是 **`tenant`**，不是 `namespaceId`
 > （`namespaceId` 只用于 `/v1/console/namespaces` 控制台接口），写错会发布到 public。

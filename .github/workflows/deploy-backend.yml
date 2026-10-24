@@ -20,7 +20,7 @@ jobs:
             cd /opt/Blob-Backend-main
             git pull --ff-only
             # 构建期间先停掉旧容器，腾出 ~512MB 内存，避免 2G 小机 OOM
-            docker compose stop blog-server
-            docker compose up -d --build blog-server
+            docker compose stop blob-backend
+            docker compose up -d --build blob-backend
             # 清理悬空镜像，省磁盘
             docker image prune -f
