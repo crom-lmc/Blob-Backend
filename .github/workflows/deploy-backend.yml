@@ -18,7 +18,14 @@ jobs:
           script: |
             set -e
             cd /opt/Blob-Backend-main
-            git pull --ff-only
+            # 服务器访问 GitHub 偶发 TLS 超时，重试 5 次再放弃
+            ok=0
+            for i in 1 2 3 4 5; do
+              if git pull --ff-only; then ok=1; break; fi
+              echo "git pull 失败（第 $i 次），5 秒后重试..."
+              sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "git pull 5 次均失败"; exit 1; }
             # 构建期间先停掉旧容器，腾出 ~512MB 内存，避免 2G 小机 OOM
             docker compose stop blob-backend
             docker compose up -d --build blob-backend
