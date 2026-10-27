@@ -1,10 +1,10 @@
 services:
-  blob-backend:
+  blog-backend:
     build:
       context: .
       dockerfile: Dockerfile
-    image: blob-server:latest
-    container_name: blob-server
+    image: blog-server:latest
+    container_name: blog-server
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -18,10 +18,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
-      - blob-network
+      - blog-network
     mem_limit: 768m
     volumes:
-      - /data/blob/uploads:/app/uploads
+      - /data/blog/uploads:/app/uploads
     logging:
       driver: json-file
       options:
@@ -29,5 +29,5 @@ services:
         max-file: "5"
 
 networks:
-  blob-network:
+  blog-network:
     external: true

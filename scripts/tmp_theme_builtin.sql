@@ -2,12 +2,12 @@
 -- 幂等脚本：可重复执行，不会重复加列或重复插入内置行。
 -- 参考 tmp_search_ddl.sql 的写法；项目 spring.sql.init.mode=never，需手动执行本脚本。
 
-USE blob;
+USE blog;
 
 -- 1) 加列（列已存在则跳过）
 SET @exists = (
     SELECT COUNT(*) FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = 'blob' AND TABLE_NAME = 't_theme' AND COLUMN_NAME = 'is_builtin'
+    WHERE TABLE_SCHEMA = 'blog' AND TABLE_NAME = 't_theme' AND COLUMN_NAME = 'is_builtin'
 );
 SET @sql = IF(@exists = 0,
     "ALTER TABLE t_theme ADD COLUMN is_builtin TINYINT NOT NULL DEFAULT 0 COMMENT '是否内置/默认主题：1=内置（不可删除）'",

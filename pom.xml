@@ -11,10 +11,10 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.blob</groupId>
-    <artifactId>blob-backend</artifactId>
+    <groupId>com.blog</groupId>
+    <artifactId>blog-backend</artifactId>
     <version>1.0.0</version>
-    <name>blob-backend</name>
+    <name>blog-backend</name>
     <description>博客系统后端：前台展示 + 后台管理 + 可视化动态主题</description>
 
     <properties>
@@ -162,7 +162,7 @@
     </dependencies>
 
     <build>
-        <finalName>blob-backend</finalName>
+        <finalName>blog-backend</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

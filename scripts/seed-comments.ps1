@@ -12,7 +12,7 @@ $BaseDir = $PSScriptRoot
 $Mysql = if ($env:MYSQL) { $env:MYSQL } else { 'C:\Program Files\MySQL\MySQL Server 5.7\bin\mysql.exe' }
 $User = if ($env:MYSQL_USER) { $env:MYSQL_USER } else { 'root' }
 $Pass = if ($env:MYSQL_PASS) { $env:MYSQL_PASS } else { '123456' }
-$Db   = if ($env:MYSQL_DB)   { $env:MYSQL_DB }   else { 'blob' }
+$Db   = if ($env:MYSQL_DB)   { $env:MYSQL_DB }   else { 'blog' }
 
 function Sql-Escape($s) {
     if ($null -eq $s) { return 'NULL' }
@@ -24,7 +24,7 @@ $data = Get-Content -Raw (Join-Path $BaseDir 'seed-comments.json') -Encoding UTF
 
 # ---- article list (id, slug, published_at) ----
 $tmpList = Join-Path $BaseDir 'seed-comments-list.tmp'
-& cmd /c "`"$Mysql`" -u$User -p$Pass --show-warnings=0 -N -B -e `"SELECT id, slug, published_at FROM blob.t_article WHERE status='published' ORDER BY id`" > `"$tmpList`" 2>nul"
+& cmd /c "`"$Mysql`" -u$User -p$Pass --show-warnings=0 -N -B -e `"SELECT id, slug, published_at FROM blog.t_article WHERE status='published' ORDER BY id`" > `"$tmpList`" 2>nul"
 $rows = Get-Content $tmpList -ErrorAction SilentlyContinue
 Remove-Item $tmpList -Force -ErrorAction SilentlyContinue
 $articles = @()
@@ -98,7 +98,7 @@ foreach ($art in $articles) {
             $rStatus = if ((Get-Random -Minimum 0 -Maximum 100) -lt 15) { 'pending' } else { 'approved' }
             $isAdmin = 0; $rAuthor = ($names | Get-Random); $rEmail = ($emails | Get-Random)
             if ((Get-Random -Minimum 0 -Maximum 100) -lt 30) {
-                $isAdmin = 1; $rAuthor = $adminName; $rEmail = 'admin@blob.com'; $rStatus = 'approved'
+                $isAdmin = 1; $rAuthor = $adminName; $rEmail = 'admin@blog.com'; $rStatus = 'approved'
             }
             $rCreated = $created.AddMinutes((Get-Random -Minimum 1 -Maximum 600))
             if ($rCreated -gt $now) { $rCreated = $now }

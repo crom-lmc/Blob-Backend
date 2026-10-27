@@ -1,13 +1,13 @@
 -- =============================================================
 --  示例自定义页面（type = page）：可重复执行（INSERT IGNORE）
---  用法：mysql -uroot -p blob < sample-pages.sql
+--  用法：mysql -uroot -p blog < sample-pages.sql
 --  说明：
 --   1. 自定义页面与文章共用 `t_article` 表，用 `type = 'page'` 区分；
 --   2. 前台导航「关于」硬编码指向 /page/about（见 SiteHeader.vue 的 navItems），
 --      因此 slug 必须是 about，否则点击会提示「页面不存在或已下线」；
 --   3. content_html 留空，前台 PageView 会用 content_md 兜底渲染 Markdown。
 -- =============================================================
-USE `blob`;
+USE `blog`;
 
 INSERT IGNORE INTO `t_article`
 (`title`, `slug`, `summary`, `content_md`, `status`, `type`, `is_top`, `allow_comment`, `word_count`, `reading_time`, `published_at`)

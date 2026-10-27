@@ -1,6 +1,6 @@
 # 本地（测试）环境：--spring.profiles.active=local（application.yml 中已默认激活）
 #
-# 本环境配置全部从 Nacos 的「blob-local」命名空间拉取 blob-server.yaml，
+# 本环境配置全部从 Nacos 的「blog-local」命名空间拉取 blog-server.yaml，
 # 数据源 / Redis / jwt / upload / site 均不在本文件硬编码。
 #
 # 重要前提（否则启动会卡死在 Nacos gRPC 重试）：
@@ -17,7 +17,7 @@
 spring:
   config:
     import:
-      - nacos:blob-server.yaml
+      - nacos:blog-server.yaml
   cloud:
     nacos:
       server-addr: ${NACOS_SERVER_ADDR}
@@ -25,8 +25,8 @@ spring:
       # 必填：取自系统环境变量（Windows 用户级已配置），空密码会被 Nacos 判 403
       password: ${NACOS_PASSWORD}
       config:
-        # blob-local 命名空间 ID
-        namespace: a892d450-0ded-46b6-8d9b-7d556ee67056
+        # blog-local 命名空间 ID
+        namespace: d67bc8e4-93ba-43ff-b1d1-adc0b9197665
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yaml
         username: ${NACOS_USERNAME}
