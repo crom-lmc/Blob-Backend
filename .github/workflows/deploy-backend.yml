@@ -17,7 +17,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            cd /opt/Blob-Backend-main
+            cd /opt/Blog-Backend-main
             # 服务器访问 GitHub 偶发 TLS 超时，重试 5 次再放弃
             ok=0
             for i in 1 2 3 4 5; do
@@ -27,7 +27,7 @@ jobs:
             done
             [ "$ok" = "1" ] || { echo "git pull 5 次均失败"; exit 1; }
             # 构建期间先停掉旧容器，腾出 ~512MB 内存，避免 2G 小机 OOM
-            docker compose stop blob-backend
-            docker compose up -d --build blob-backend
+            docker compose stop blog-backend
+            docker compose up -d --build blog-backend
             # 清理悬空镜像，省磁盘
             docker image prune -f
